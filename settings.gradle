@@ -1,0 +1,3 @@
+include ':museum'
+include ':sample'
+rootProject.name = "Museum"
