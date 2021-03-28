@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Museum</string>
+
+    <string name="image">Image</string>
 </resources>

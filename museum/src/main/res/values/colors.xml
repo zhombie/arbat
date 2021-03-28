@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="museum_white">#FFFFFF</color>
+    <color name="museum_dark_black_alpha_60">#60000000</color>
+    <color name="museum_dark_black">#000000</color>
+</resources>
