@@ -71,11 +71,6 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
             return this
         }
 
-        fun setStartViewPosition(viewPosition: ViewPosition): Builder {
-            this.viewPosition = viewPosition
-            return this
-        }
-
         fun setScreenView(screenView: View): Builder {
             this.screenView = screenView
             return this

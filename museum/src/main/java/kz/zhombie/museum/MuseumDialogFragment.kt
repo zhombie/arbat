@@ -69,11 +69,6 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
             return this
         }
 
-        fun setStartViewPosition(viewPosition: ViewPosition): Builder {
-            this.viewPosition = viewPosition
-            return this
-        }
-
         fun setArtworkView(artworkView: View): Builder {
             this.artworkView = artworkView
             return this
