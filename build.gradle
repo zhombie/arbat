@@ -13,12 +13,74 @@ buildscript {
     }
 }
 
+/**
+ * Shared configs across subprojects
+ */
+ext.projectArtifactId = { project ->
+    if (project.name == 'cinema' || project.name == 'museum') {
+        return project.name
+    } else {
+        return null
+    }
+}
+
 allprojects {
+    group = 'com.github.zhombie.arbat'
+    version = '1.0.3'
+    project.ext.artifactId = rootProject.ext.projectArtifactId(project)
+
     repositories {
         google()
         jcenter()
     }
 }
+
+/**
+ * Publishing and signing info
+ */
+subprojects { project ->
+    if (project.ext.artifactId == null) return
+
+    apply plugin: 'com.android.library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'kotlin-android'
+
+    publishing {
+        publications {
+            aar(MavenPublication) {
+                groupId project.group
+                artifactId project.ext.artifactId
+                version project.version
+
+                pom {
+                    name = project.name
+                    url = "https://github.com/zhombie/arbat"
+
+                    developers {
+                        developer {
+                            name = 'zhombie'
+                        }
+                    }
+                }
+
+                pom.withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    project.configurations.api.allDependencies.each { dependency ->
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', dependency.group)
+                        dependencyNode.appendNode('artifactId', dependency.name)
+                        dependencyNode.appendNode('version', dependency.version)
+                    }
+                }
+
+                afterEvaluate {
+                    artifact "$buildDir/outputs/aar/$project.name-release.aar"
+                }
+            }
+        }
+    }
+}
+
 
 task clean(type: Delete) {
     delete rootProject.buildDir
