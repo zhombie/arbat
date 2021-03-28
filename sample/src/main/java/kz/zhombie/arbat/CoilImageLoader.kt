@@ -1,4 +1,4 @@
-package kz.zhombie.museum
+package kz.zhombie.arbat
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -9,6 +9,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.size.Precision
 import coil.size.Scale
+import kz.zhombie.museum.ArtworkLoader
 
 class CoilImageLoader : ArtworkLoader {
 

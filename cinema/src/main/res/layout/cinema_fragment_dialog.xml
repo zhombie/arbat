@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fitsSystemWindows="true">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/cinema_dark_black_alpha_60"
+        android:elevation="0dp"
+        android:fitsSystemWindows="true">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            android:backgroundTint="@android:color/transparent"
+            android:fitsSystemWindows="true" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <View
+        android:id="@+id/backgroundView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/cinema_dark_black"
+        android:visibility="invisible"
+        tools:visibility="visible" />
+
+    <com.alexvasilkov.gestures.views.GestureFrameLayout
+        android:id="@+id/gestureFrameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.google.android.exoplayer2.ui.PlayerView
+            android:id="@+id/playerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.alexvasilkov.gestures.views.GestureFrameLayout>
+
+    <FrameLayout
+        android:id="@+id/controllerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/playOrPauseButton"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_gravity="center"
+            android:backgroundTint="@color/cinema_dark_black_alpha_80"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:insetBottom="10dp"
+            android:insetLeft="10dp"
+            android:insetRight="10dp"
+            android:insetTop="10dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:padding="10dp"
+            android:text="@null"
+            app:icon="@drawable/exo_icon_play"
+            app:iconGravity="textEnd"
+            app:iconPadding="0dp"
+            app:iconSize="24dp"
+            app:iconTint="@null"
+            app:rippleColor="?attr/colorControlHighlight"
+            app:shapeAppearance="@style/Cinema.CircularShapeAppearance" />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/footerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/cinema_dark_black_alpha_60"
+        android:gravity="center_vertical"
+        android:minHeight="70dp"
+        android:orientation="vertical">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/titleView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:maxLines="2"
+            android:singleLine="false"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="normal"
+            tools:text="Image title" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/subtitleView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="normal"
+            tools:text="Image creation date" />
+
+    </LinearLayout>
+
+</FrameLayout>
