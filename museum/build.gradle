@@ -1,8 +1,12 @@
 plugins {
     id 'com.android.library'
 
+    id 'maven-publish'
+
     id 'kotlin-android'
 }
+
+group = 'com.github.zhombie.museum'
 
 android {
     compileSdkVersion 30
