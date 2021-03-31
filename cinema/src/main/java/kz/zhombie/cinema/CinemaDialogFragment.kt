@@ -545,8 +545,10 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
     }
 
     override fun onTrackViewPosition(viewPosition: ViewPosition) {
-        if (gestureFrameLayout.positionAnimator.position > 0f) {
-            gestureFrameLayout.positionAnimator.update(viewPosition)
+        if (this::gestureFrameLayout.isInitialized) {
+            if (gestureFrameLayout.positionAnimator.position > 0f) {
+                gestureFrameLayout.positionAnimator.update(viewPosition)
+            }
         }
     }
 
