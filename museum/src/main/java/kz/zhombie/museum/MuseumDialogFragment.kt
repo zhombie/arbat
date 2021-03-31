@@ -6,10 +6,10 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewTreeObserver
-import android.view.WindowManager
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentTransaction
 import com.alexvasilkov.gestures.Settings
 import com.alexvasilkov.gestures.animation.ViewPosition
 import com.alexvasilkov.gestures.views.GestureImageView
@@ -17,7 +17,7 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.textview.MaterialTextView
 
-class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museum_fragment_dialog),
+class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.museum_fragment_dialog),
     MuseumDialogFragmentListener {
 
     companion object {
@@ -100,12 +100,25 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
             ).apply {
                 this@Builder.artworkView?.let { setArtworkView(it) }
 
-                setArtworkLoader(requireNotNull(this@Builder.artworkLoader) {
-                    "Museum artwork must be loaded somehow"
-                })
+                setArtworkLoader(
+                    requireNotNull(
+                        this@Builder.artworkLoader ?: kz.zhombie.museum.Settings.getArtworkLoader()
+                    ) { "Museum artwork must be loaded somehow" }
+                )
 
                 this@Builder.callback?.let { setCallback(it) }
             }
+        }
+
+        fun show(fragmentManager: FragmentManager): MuseumDialogFragment {
+            val fragment = build()
+            val transaction = fragmentManager.beginTransaction()
+            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+            transaction
+                .add(android.R.id.content, fragment)
+                .addToBackStack(null)
+                .commit()
+            return fragment
         }
     }
 
@@ -138,6 +151,8 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
 
     private var isPictureShowCalled: Boolean = false
 
+    private var isOverlayViewVisible: Boolean = true
+
     private var artworkView: View? = null
         set(value) {
             field = value
@@ -162,14 +177,14 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
     private var subtitle: String? = null
     private lateinit var startViewPosition: ViewPosition
 
-    override fun getTheme(): Int {
-        return R.style.Museum_Dialog_Fullscreen
-    }
+//    override fun getTheme(): Int {
+//        return R.style.Museum_Dialog_Fullscreen
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setStyle(STYLE_NORMAL, theme)
+//        setStyle(STYLE_NORMAL, theme)
 
         val arguments = arguments
         require(arguments != null) { "Provide arguments!" }
@@ -177,14 +192,6 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
         title = requireNotNull(arguments.getString(BundleKey.TITLE))
         subtitle = arguments.getString(BundleKey.SUBTITLE)
         startViewPosition = ViewPosition.unpack(arguments.getString(BundleKey.START_VIEW_POSITION))
-    }
-
-    override fun onResume() {
-        val layoutParams: WindowManager.LayoutParams? = dialog?.window?.attributes
-        layoutParams?.width = WindowManager.LayoutParams.MATCH_PARENT
-        layoutParams?.height = WindowManager.LayoutParams.MATCH_PARENT
-        dialog?.window?.attributes = layoutParams
-        super.onResume()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -229,7 +236,7 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
 
             if (isFinished) {
                 if (!isPictureShowCalled) {
-                    callback?.onPictureShow(0L)
+                    callback?.onPictureShow(17L)
                     isPictureShowCalled = true
                 }
 
@@ -268,7 +275,7 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
         super.onDestroy()
 
         if (!isPictureShowCalled) {
-            callback?.onPictureShow(0L)
+            callback?.onPictureShow(17L)
             isPictureShowCalled = true
         }
 
@@ -313,7 +320,7 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
 
         // Click actions
         gestureImageView.setOnClickListener {
-            if (appBarLayout.visibility == View.VISIBLE) {
+            if (isOverlayViewVisible) {
                 appBarLayout.animate()
                     .alpha(0.0F)
                     .setDuration(100L)
@@ -321,6 +328,16 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
                         appBarLayout.visibility = View.INVISIBLE
                     }
                     .start()
+
+                footerView.animate()
+                    .alpha(0.0F)
+                    .setDuration(100L)
+                    .withEndAction {
+                        footerView.visibility = View.INVISIBLE
+                    }
+                    .start()
+
+                isOverlayViewVisible = false
             } else {
                 appBarLayout.animate()
                     .alpha(1.0F)
@@ -329,17 +346,7 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
                         appBarLayout.visibility = View.VISIBLE
                     }
                     .start()
-            }
 
-            if (footerView.visibility == View.VISIBLE) {
-                footerView.animate()
-                    .alpha(0.0F)
-                    .setDuration(100L)
-                    .withEndAction {
-                        footerView.visibility = View.INVISIBLE
-                    }
-                    .start()
-            } else {
                 footerView.animate()
                     .alpha(1.0F)
                     .setDuration(100L)
@@ -347,6 +354,8 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
                         footerView.visibility = View.VISIBLE
                     }
                     .start()
+
+                isOverlayViewVisible = true
             }
         }
     }

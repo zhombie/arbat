@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Museum.Dialog.Fullscreen" parent="Theme.MaterialComponents.Dialog">
-        <item name="android:backgroundDimEnabled">false</item>
-        <item name="android:padding">0dp</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowActionBar">false</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowIsFloating">false</item>
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowNoTitle">true</item>
+<!--        <item name="android:backgroundDimEnabled">false</item>-->
+<!--        <item name="android:padding">0dp</item>-->
+<!--        <item name="android:statusBarColor">@color/museum_dark_black</item>-->
+<!--        <item name="android:windowActionBar">false</item>-->
+<!--        <item name="android:windowBackground">@color/museum_white</item>-->
+<!--        <item name="android:windowFullscreen">true</item>-->
+<!--        <item name="android:windowIsFloating">false</item>-->
+<!--        <item name="android:windowIsTranslucent">true</item>-->
+<!--        <item name="android:windowNoTitle">true</item>-->
     </style>
 </resources>

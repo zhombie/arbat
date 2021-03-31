@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         imageView?.setOnClickListener {
-            val dialogFragment = MuseumDialogFragment.Builder()
+            MuseumDialogFragment.Builder()
                 .setUri(Uri.parse(IMAGE_URL))
                 .setTitle("Image")
                 .setSubtitle("Subtitle")
@@ -49,7 +49,8 @@ class MainActivity : AppCompatActivity() {
                 .setArtworkLoader(CoilImageLoader())
                 .setCallback(object : MuseumDialogFragment.Callback {
                     override fun onPictureShow(delay: Long) {
-                        it.visibility = View.VISIBLE
+                        HandlerCompat.createAsync(Looper.getMainLooper())
+                            .postDelayed({ it.visibility = View.VISIBLE }, delay)
                     }
 
                     override fun onPictureHide(delay: Long) {
@@ -57,9 +58,7 @@ class MainActivity : AppCompatActivity() {
                             .postDelayed({ it.visibility = View.INVISIBLE }, delay)
                     }
                 })
-                .build()
-
-            dialogFragment.show(supportFragmentManager, MuseumDialogFragment::class.java.simpleName)
+                .show(supportFragmentManager)
         }
 
         imageView2?.setOnClickListener {
