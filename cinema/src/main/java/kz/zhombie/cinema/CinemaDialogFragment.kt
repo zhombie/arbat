@@ -1,5 +1,6 @@
 package kz.zhombie.cinema
 
+import android.content.DialogInterface
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
@@ -178,14 +179,14 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
 
     private var controllerViewAnimation: ViewPropertyAnimator? = null
 
-//    override fun getTheme(): Int {
-//        return R.style.Cinema_Dialog_Fullscreen
-//    }
+    override fun getTheme(): Int {
+        return R.style.Cinema_Dialog_Fullscreen
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        setStyle(STYLE_NORMAL, theme)
+        setStyle(STYLE_NORMAL, theme)
 
         val arguments = arguments
         require(arguments != null) { "Provide arguments!" }
@@ -279,7 +280,7 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
 
             if (isFinished) {
                 if (!isMovieShowCalled) {
-                    callback?.onMovieShow(17L)
+                    callback?.onMovieShow(0L)
                     isMovieShowCalled = true
                 }
 
@@ -315,11 +316,21 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
         releasePlayer()
     }
 
+    override fun onCancel(dialog: DialogInterface) {
+        dismiss()
+    }
+
+    override fun dismiss() {
+        if (!gestureFrameLayout.positionAnimator.isLeaving) {
+            gestureFrameLayout.positionAnimator.exit(true)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
 
         if (!isMovieShowCalled) {
-            callback?.onMovieShow(17L)
+            callback?.onMovieShow(0L)
             isMovieShowCalled = true
         }
 

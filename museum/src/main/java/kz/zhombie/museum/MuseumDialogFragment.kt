@@ -188,14 +188,14 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
     private lateinit var startViewPosition: ViewPosition
     private var isFooterViewEnabled: Boolean = false
 
-//    override fun getTheme(): Int {
-//        return R.style.Museum_Dialog_Fullscreen
-//    }
+    override fun getTheme(): Int {
+        return R.style.Museum_Dialog_Fullscreen
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        setStyle(STYLE_NORMAL, theme)
+        setStyle(STYLE_NORMAL, theme)
 
         val arguments = arguments
         require(arguments != null) { "Provide arguments!" }
@@ -258,7 +258,7 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
 
             if (isFinished) {
                 if (!isPictureShowCalled) {
-                    callback?.onPictureShow(17L)
+                    callback?.onPictureShow(0L)
                     isPictureShowCalled = true
                 }
 
@@ -297,7 +297,7 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
         super.onDestroy()
 
         if (!isPictureShowCalled) {
-            callback?.onPictureShow(17L)
+            callback?.onPictureShow(0L)
             isPictureShowCalled = true
         }
 
