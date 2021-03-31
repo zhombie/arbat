@@ -361,7 +361,7 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
     private fun setupGestureFrameLayout() {
         // Settings
         gestureFrameLayout.controller.settings
-            .setAnimationsDuration(250L)
+            .setAnimationsDuration(225L)
             .setBoundsType(com.alexvasilkov.gestures.Settings.Bounds.NORMAL)
             .setDoubleTapEnabled(false)
             .setExitEnabled(true)
@@ -370,10 +370,10 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
             .setFitMethod(com.alexvasilkov.gestures.Settings.Fit.INSIDE)
             .setFlingEnabled(true)
             .setGravity(Gravity.CENTER)
-            .setMaxZoom(0F)
+            .setMaxZoom(2.5F)
             .setMinZoom(0F)
             .setPanEnabled(true)
-            .setZoomEnabled(false)
+            .setZoomEnabled(true)
 
         // Click actions
         gestureFrameLayout.setOnClickListener {

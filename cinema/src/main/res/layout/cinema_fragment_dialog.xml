@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
@@ -68,7 +69,7 @@
             app:icon="@drawable/exo_icon_play"
             app:iconGravity="textEnd"
             app:iconPadding="0dp"
-            app:iconSize="27.5dp"
+            app:iconSize="32.5dp"
             app:iconTint="@null"
             app:rippleColor="?attr/colorControlHighlight"
             app:shapeAppearance="@style/Cinema.CircularShapeAppearance" />
