@@ -2,6 +2,7 @@ package kz.zhombie.cinema
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -9,15 +10,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
 import com.alexvasilkov.gestures.animation.ViewPosition
 import com.alexvasilkov.gestures.views.GestureFrameLayout
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
+import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.textview.MaterialTextView
 
 class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinema_fragment_dialog),
@@ -111,6 +113,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
     private lateinit var playerView: PlayerView
     private lateinit var controllerView: FrameLayout
     private lateinit var playOrPauseButton: MaterialButton
+    private lateinit var progressIndicator: CircularProgressIndicator
     private lateinit var footerView: LinearLayout
     private lateinit var titleView: MaterialTextView
     private lateinit var subtitleView: MaterialTextView
@@ -186,6 +189,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
         playerView = view.findViewById(R.id.playerView)
         controllerView = view.findViewById(R.id.controllerView)
         playOrPauseButton = view.findViewById(R.id.playOrPauseButton)
+        progressIndicator = view.findViewById(R.id.progressIndicator)
         footerView = view.findViewById(R.id.footerView)
         titleView = view.findViewById(R.id.titleView)
         subtitleView = view.findViewById(R.id.subtitleView)
@@ -197,7 +201,24 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
         setupPlayer()
         setupControllerView()
 
-        player?.setMediaItem(MediaItem.fromUri(uri))
+        val mediaItem = MediaItem.Builder()
+            .setUri(uri)
+            .setMimeType(MimeTypes.BASE_TYPE_VIDEO)
+            .build()
+
+        val httpDataSourceFactory = DefaultHttpDataSourceFactory(
+            ExoPlayerLibraryInfo.DEFAULT_USER_AGENT,
+            20 * 1000,
+            20 * 1000,
+            true
+        )
+
+        val mediaSource = DefaultMediaSourceFactory(requireContext())
+            .setDrmHttpDataSourceFactory(httpDataSourceFactory)
+            .createMediaSource(mediaItem)
+
+        player?.setMediaSource(mediaSource)
+        player?.prepare()
 
         gestureFrameLayout.positionAnimator.addPositionUpdateListener { position, isLeaving ->
             val isFinished = position == 0F && isLeaving
@@ -321,7 +342,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
             if (appBarLayout.visibility == View.VISIBLE) {
                 appBarLayout.animate()
                     .alpha(0.0F)
-                    .setDuration(100L)
+                    .setDuration(50L)
                     .withEndAction {
                         appBarLayout.visibility = View.INVISIBLE
                     }
@@ -329,7 +350,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
             } else {
                 appBarLayout.animate()
                     .alpha(1.0F)
-                    .setDuration(100L)
+                    .setDuration(50L)
                     .withStartAction {
                         appBarLayout.visibility = View.VISIBLE
                     }
@@ -344,7 +365,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
 
                 footerView.animate()
                     .alpha(0.0F)
-                    .setDuration(100L)
+                    .setDuration(50L)
                     .withEndAction {
                         footerView.visibility = View.INVISIBLE
                     }
@@ -357,7 +378,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
 
                 footerView.animate()
                     .alpha(1.0F)
-                    .setDuration(100L)
+                    .setDuration(50L)
                     .withStartAction {
                         footerView.visibility = View.VISIBLE
                     }
@@ -399,7 +420,6 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
             player?.addListener(eventListener)
             player?.repeatMode = SimpleExoPlayer.REPEAT_MODE_OFF
             player?.setWakeMode(C.WAKE_MODE_NONE)
-            player?.prepare()
         }
     }
 
@@ -457,6 +477,18 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
                     footerView.alpha = 1.0F
                     footerView.visibility = View.VISIBLE
                 }
+
+                if (state == Player.STATE_BUFFERING) {
+                    playOrPauseButton.visibility = View.INVISIBLE
+                    progressIndicator.visibility = View.VISIBLE
+                } else {
+                    progressIndicator.visibility = View.INVISIBLE
+                    playOrPauseButton.visibility = View.VISIBLE
+                }
+            }
+
+            override fun onPlayerError(error: ExoPlaybackException) {
+                error.printStackTrace()
             }
         }
     }

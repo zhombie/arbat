@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="cinema_white">#FFFFFF</color>
+    <color name="cinema_gray">#F3F3F3</color>
     <color name="cinema_dark_black_alpha_60">#60000000</color>
     <color name="cinema_dark_black_alpha_80">#80000000</color>
     <color name="cinema_dark_black">#000000</color>

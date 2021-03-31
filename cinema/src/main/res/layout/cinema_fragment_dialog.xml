@@ -52,8 +52,8 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/playOrPauseButton"
             style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="75dp"
-            android:layout_height="75dp"
+            android:layout_width="85dp"
+            android:layout_height="85dp"
             android:layout_gravity="center"
             android:backgroundTint="@color/cinema_dark_black_alpha_80"
             android:gravity="center"
@@ -69,10 +69,23 @@
             app:icon="@drawable/exo_icon_play"
             app:iconGravity="textEnd"
             app:iconPadding="0dp"
-            app:iconSize="24dp"
+            app:iconSize="27.5dp"
             app:iconTint="@null"
             app:rippleColor="?attr/colorControlHighlight"
             app:shapeAppearance="@style/Cinema.CircularShapeAppearance" />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progressIndicator"
+            style="@style/Widget.MaterialComponents.CircularProgressIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            app:indicatorColor="@color/cinema_white"
+            app:indicatorSize="55dp"
+            app:trackColor="@color/cinema_dark_black_alpha_60"
+            app:trackCornerRadius="10dp"
+            app:trackThickness="4dp" />
 
     </FrameLayout>
 
