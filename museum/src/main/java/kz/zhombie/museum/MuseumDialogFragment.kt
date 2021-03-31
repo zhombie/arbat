@@ -23,6 +23,11 @@ class MuseumDialogFragment private constructor() : DialogFragment(R.layout.museu
     companion object {
         private val TAG: String = MuseumDialogFragment::class.java.simpleName
 
+        fun init(artworkLoader: ArtworkLoader, isLoggingEnabled: Boolean) {
+            kz.zhombie.museum.Settings.setArtworkLoader(artworkLoader)
+            kz.zhombie.museum.Settings.setLoggingEnabled(isLoggingEnabled)
+        }
+
         private fun newInstance(
             uri: Uri,
             title: String,
