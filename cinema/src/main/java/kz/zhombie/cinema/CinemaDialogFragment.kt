@@ -2,12 +2,12 @@ package kz.zhombie.cinema
 
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentTransaction
 import com.alexvasilkov.gestures.animation.ViewPosition
 import com.alexvasilkov.gestures.views.GestureFrameLayout
 import com.google.android.exoplayer2.*
@@ -22,7 +22,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.textview.MaterialTextView
 
-class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinema_fragment_dialog),
+class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.cinema_fragment_dialog),
     CinemaDialogFragmentListener {
 
     companion object {
@@ -30,28 +30,36 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
 
         private fun newInstance(
             uri: Uri,
-            title: String,
+            title: String? = null,
             subtitle: String? = null,
-            startViewPosition: ViewPosition
+            startViewPosition: ViewPosition,
+            isFooterViewEnabled: Boolean
         ): CinemaDialogFragment {
             val fragment = CinemaDialogFragment()
             fragment.arguments = Bundle().apply {
-                putSerializable(BundleKey.URI, uri.toString())
-                putSerializable(BundleKey.TITLE, title)
-                if (!subtitle.isNullOrBlank()) putSerializable(BundleKey.SUBTITLE, subtitle)
-                putSerializable(BundleKey.START_VIEW_POSITION, startViewPosition.pack())
+                putString(BundleKey.URI, uri.toString())
+                putString(BundleKey.TITLE, title)
+                if (!subtitle.isNullOrBlank()) putString(BundleKey.SUBTITLE, subtitle)
+                putString(BundleKey.START_VIEW_POSITION, startViewPosition.pack())
+                putBoolean(BundleKey.IS_FOOTER_VIEW_ENABLED, isFooterViewEnabled)
             }
             return fragment
         }
     }
 
     class Builder {
+        private var screenView: View? = null
         private var uri: Uri? = null
         private var title: String? = null
         private var subtitle: String? = null
         private var viewPosition: ViewPosition? = null
-        private var screenView: View? = null
+        private var isFooterViewEnabled: Boolean = false
         private var callback: Callback? = null
+
+        fun setScreenView(screenView: View): Builder {
+            this.screenView = screenView
+            return this
+        }
 
         fun setUri(uri: Uri): Builder {
             this.uri = uri
@@ -73,8 +81,8 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
             return this
         }
 
-        fun setScreenView(screenView: View): Builder {
-            this.screenView = screenView
+        fun setFooterViewEnabled(isEnabled: Boolean): Builder {
+            this.isFooterViewEnabled = isEnabled
             return this
         }
 
@@ -86,16 +94,28 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
         fun build(): CinemaDialogFragment {
             return newInstance(
                 uri = requireNotNull(uri) { "Cinema movie uri is mandatory value" },
-                title = requireNotNull(title) { "Cinema movie title is mandatory value" },
+                title = title,
                 subtitle = subtitle,
                 startViewPosition = requireNotNull(viewPosition) {
                     "Cinema movie needs start view position, in order to make smooth transition animation"
-                }
+                },
+                isFooterViewEnabled = isFooterViewEnabled
             ).apply {
                 this@Builder.screenView?.let { setScreenView(it) }
 
                 this@Builder.callback?.let { setCallback(it) }
             }
+        }
+
+        fun show(fragmentManager: FragmentManager): CinemaDialogFragment {
+            val fragment = build()
+            val transaction = fragmentManager.beginTransaction()
+            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+            transaction
+                .add(android.R.id.content, fragment)
+                .addToBackStack(null)
+                .commit()
+            return fragment
         }
     }
 
@@ -104,6 +124,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
         const val TITLE = "title"
         const val SUBTITLE = "subtitle"
         const val START_VIEW_POSITION = "start_view_position"
+        const val IS_FOOTER_VIEW_ENABLED = "is_footer_view_enabled"
     }
 
     private lateinit var appBarLayout: AppBarLayout
@@ -125,6 +146,8 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
     }
 
     private var isMovieShowCalled: Boolean = false
+
+    private var isOverlayViewVisible: Boolean = true
 
     private var screenView: View? = null
         set(value) {
@@ -148,35 +171,29 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
     private var player: SimpleExoPlayer? = null
 
     private lateinit var uri: Uri
-    private lateinit var title: String
+    private var title: String? = null
     private var subtitle: String? = null
     private lateinit var startViewPosition: ViewPosition
+    private var isFooterViewEnabled: Boolean = false
 
     private var controllerViewAnimation: ViewPropertyAnimator? = null
 
-    override fun getTheme(): Int {
-        return R.style.Cinema_Dialog_Fullscreen
-    }
+//    override fun getTheme(): Int {
+//        return R.style.Cinema_Dialog_Fullscreen
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setStyle(STYLE_NORMAL, theme)
+//        setStyle(STYLE_NORMAL, theme)
 
         val arguments = arguments
         require(arguments != null) { "Provide arguments!" }
         uri = Uri.parse(requireNotNull(arguments.getString(BundleKey.URI)))
-        title = requireNotNull(arguments.getString(BundleKey.TITLE))
+        title = arguments.getString(BundleKey.TITLE)
         subtitle = arguments.getString(BundleKey.SUBTITLE)
         startViewPosition = ViewPosition.unpack(arguments.getString(BundleKey.START_VIEW_POSITION))
-    }
-
-    override fun onResume() {
-        val layoutParams: WindowManager.LayoutParams? = dialog?.window?.attributes
-        layoutParams?.width = WindowManager.LayoutParams.MATCH_PARENT
-        layoutParams?.height = WindowManager.LayoutParams.MATCH_PARENT
-        dialog?.window?.attributes = layoutParams
-        super.onResume()
+        isFooterViewEnabled = arguments.getBoolean(BundleKey.IS_FOOTER_VIEW_ENABLED)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -200,6 +217,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
         setupInfo()
         setupPlayer()
         setupControllerView()
+        setupFooterView()
 
         val mediaItem = MediaItem.Builder()
             .setUri(uri)
@@ -226,7 +244,10 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
             appBarLayout.alpha = position
             backgroundView.alpha = position
             controllerView.alpha = position
-            footerView.alpha = position
+
+            if (isFooterViewEnabled) {
+                footerView.alpha = position
+            }
 
             if (isLeaving) {
                 controllerView.visibility = View.INVISIBLE
@@ -237,11 +258,17 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
             if (isFinished) {
                 appBarLayout.visibility = View.INVISIBLE
                 backgroundView.visibility = View.INVISIBLE
-                footerView.visibility = View.INVISIBLE
+
+                if (isFooterViewEnabled) {
+                    footerView.visibility = View.INVISIBLE
+                }
             } else {
                 appBarLayout.visibility = View.VISIBLE
                 backgroundView.visibility = View.VISIBLE
-                footerView.visibility = View.VISIBLE
+
+                if (isFooterViewEnabled) {
+                    footerView.visibility = View.VISIBLE
+                }
             }
 
             gestureFrameLayout.visibility = if (isFinished) {
@@ -252,7 +279,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
 
             if (isFinished) {
                 if (!isMovieShowCalled) {
-                    callback?.onMovieShow(0L)
+                    callback?.onMovieShow(17L)
                     isMovieShowCalled = true
                 }
 
@@ -292,7 +319,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
         super.onDestroy()
 
         if (!isMovieShowCalled) {
-            callback?.onMovieShow(0L)
+            callback?.onMovieShow(17L)
             isMovieShowCalled = true
         }
 
@@ -339,7 +366,7 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
 
         // Click actions
         gestureFrameLayout.setOnClickListener {
-            if (appBarLayout.visibility == View.VISIBLE) {
+            if (isOverlayViewVisible) {
                 appBarLayout.animate()
                     .alpha(0.0F)
                     .setDuration(50L)
@@ -347,6 +374,23 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
                         appBarLayout.visibility = View.INVISIBLE
                     }
                     .start()
+
+                controllerViewAnimation?.cancel()
+                controllerViewAnimation = null
+
+                controllerView.visibility = View.INVISIBLE
+
+                if (isFooterViewEnabled) {
+                    footerView.animate()
+                        .alpha(0.0F)
+                        .setDuration(50L)
+                        .withEndAction {
+                            footerView.visibility = View.INVISIBLE
+                        }
+                        .start()
+                }
+
+                isOverlayViewVisible = false
             } else {
                 appBarLayout.animate()
                     .alpha(1.0F)
@@ -355,34 +399,23 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
                         appBarLayout.visibility = View.VISIBLE
                     }
                     .start()
-            }
 
-            if (footerView.visibility == View.VISIBLE) {
-                controllerViewAnimation?.cancel()
-                controllerViewAnimation = null
-
-                controllerView.visibility = View.INVISIBLE
-
-                footerView.animate()
-                    .alpha(0.0F)
-                    .setDuration(50L)
-                    .withEndAction {
-                        footerView.visibility = View.INVISIBLE
-                    }
-                    .start()
-            } else {
                 controllerViewAnimation?.cancel()
                 controllerViewAnimation = null
 
                 controllerView.visibility = View.VISIBLE
 
-                footerView.animate()
-                    .alpha(1.0F)
-                    .setDuration(50L)
-                    .withStartAction {
-                        footerView.visibility = View.VISIBLE
-                    }
-                    .start()
+                if (isFooterViewEnabled) {
+                    footerView.animate()
+                        .alpha(1.0F)
+                        .setDuration(50L)
+                        .withStartAction {
+                            footerView.visibility = View.VISIBLE
+                        }
+                        .start()
+                }
+
+                isOverlayViewVisible = true
             }
         }
     }
@@ -433,6 +466,14 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
         }
     }
 
+    private fun setupFooterView() {
+        if (isFooterViewEnabled) {
+            footerView.visibility = View.VISIBLE
+        } else {
+            footerView.visibility = View.GONE
+        }
+    }
+
     private fun releasePlayer() {
         player?.clearMediaItems()
         player?.removeListener(eventListener)
@@ -474,8 +515,10 @@ class CinemaDialogFragment private constructor() : DialogFragment(R.layout.cinem
                     controllerView.alpha = 1.0F
                     controllerView.visibility = View.VISIBLE
 
-                    footerView.alpha = 1.0F
-                    footerView.visibility = View.VISIBLE
+                    if (isFooterViewEnabled) {
+                        footerView.alpha = 1.0F
+                        footerView.visibility = View.VISIBLE
+                    }
                 }
 
                 if (state == Player.STATE_BUFFERING) {

@@ -63,15 +63,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         imageView2?.setOnClickListener {
-            val dialogFragment = CinemaDialogFragment.Builder()
+            CinemaDialogFragment.Builder()
+                .setScreenView(it)
                 .setUri(Uri.parse(VIDEO_URL))
                 .setTitle("Video")
                 .setSubtitle("Subtitle")
                 .setStartViewPosition(it)
-                .setScreenView(it)
+                .setFooterViewEnabled(true)
                 .setCallback(object : CinemaDialogFragment.Callback {
                     override fun onMovieShow(delay: Long) {
-                        it.visibility = View.VISIBLE
+                        HandlerCompat.createAsync(Looper.getMainLooper())
+                            .postDelayed({ it.visibility = View.VISIBLE }, delay)
                     }
 
                     override fun onMovieHide(delay: Long) {
@@ -79,9 +81,7 @@ class MainActivity : AppCompatActivity() {
                             .postDelayed({ it.visibility = View.INVISIBLE }, delay)
                     }
                 })
-                .build()
-
-            dialogFragment.show(supportFragmentManager, CinemaDialogFragment::class.java.simpleName)
+                .show(supportFragmentManager)
         }
     }
 
