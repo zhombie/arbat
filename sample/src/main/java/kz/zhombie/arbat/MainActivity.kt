@@ -41,12 +41,13 @@ class MainActivity : AppCompatActivity() {
 
         imageView?.setOnClickListener {
             MuseumDialogFragment.Builder()
+                .setArtworkLoader(CoilImageLoader())
+                .setArtworkView(it)
                 .setUri(Uri.parse(IMAGE_URL))
                 .setTitle("Image")
                 .setSubtitle("Subtitle")
                 .setStartViewPosition(it)
-                .setArtworkView(it)
-                .setArtworkLoader(CoilImageLoader())
+                .setFooterViewEnabled(true)
                 .setCallback(object : MuseumDialogFragment.Callback {
                     override fun onPictureShow(delay: Long) {
                         HandlerCompat.createAsync(Looper.getMainLooper())
