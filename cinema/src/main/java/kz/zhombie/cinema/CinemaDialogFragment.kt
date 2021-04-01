@@ -114,7 +114,6 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
             transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
             transaction
                 .add(android.R.id.content, fragment)
-                .addToBackStack(null)
                 .commit()
             return fragment
         }

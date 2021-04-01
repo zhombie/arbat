@@ -125,7 +125,6 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
             transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
             transaction
                 .add(android.R.id.content, fragment)
-                .addToBackStack(null)
                 .commit()
             return fragment
         }
