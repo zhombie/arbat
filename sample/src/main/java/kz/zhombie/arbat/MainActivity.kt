@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     private var imageView: ImageView? = null
     private var imageView2: ImageView? = null
 
-    private val imageLoader by lazy { CoilImageLoader() }
+    private var imageLoader: CoilImageLoader? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,17 +31,19 @@ class MainActivity : AppCompatActivity() {
         imageView = findViewById(R.id.imageView)
         imageView2 = findViewById(R.id.imageView2)
 
+        imageLoader = CoilImageLoader(this)
+
         imageView?.let { imageView ->
-            imageLoader.loadSmallImage(this, imageView, Uri.parse(IMAGE_URL))
+            imageLoader?.loadSmallImage(this, imageView, Uri.parse(IMAGE_URL))
         }
 
         imageView2?.let { imageView ->
-            imageLoader.loadSmallImage(this, imageView, Uri.parse(VIDEO_THUMBNAIL_URL))
+            imageLoader?.loadSmallImage(this, imageView, Uri.parse(VIDEO_THUMBNAIL_URL))
         }
 
         imageView?.setOnClickListener {
             MuseumDialogFragment.Builder()
-                .setArtworkLoader(CoilImageLoader())
+                .setArtworkLoader(requireNotNull(imageLoader))
                 .setArtworkView(it)
                 .setUri(Uri.parse(IMAGE_URL))
                 .setTitle("Image")
@@ -83,6 +85,13 @@ class MainActivity : AppCompatActivity() {
                 })
                 .show(supportFragmentManager)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        imageLoader?.clearCache()
+        imageLoader = null
     }
 
 }
