@@ -7,13 +7,11 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.LinearLayout
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.alexvasilkov.gestures.Settings
 import com.alexvasilkov.gestures.animation.ViewPosition
 import com.alexvasilkov.gestures.views.GestureImageView
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.textview.MaterialTextView
 
@@ -138,7 +136,6 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
         const val IS_FOOTER_VIEW_ENABLED = "is_footer_view_enabled"
     }
 
-    private lateinit var appBarLayout: AppBarLayout
     private lateinit var toolbar: MaterialToolbar
     private lateinit var backgroundView: View
     private lateinit var gestureImageView: GestureImageView
@@ -208,7 +205,6 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        appBarLayout = view.findViewById(R.id.appBarLayout)
         toolbar = view.findViewById(R.id.toolbar)
         backgroundView = view.findViewById(R.id.backgroundView)
         gestureImageView = view.findViewById(R.id.gestureImageView)
@@ -216,7 +212,7 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
         titleView = view.findViewById(R.id.titleView)
         subtitleView = view.findViewById(R.id.subtitleView)
 
-        setupActionBar()
+        setupToolbar()
         setupGestureImageView()
         setupInfo()
         setupFooterView()
@@ -226,7 +222,7 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
         gestureImageView.positionAnimator.addPositionUpdateListener { position, isLeaving ->
             val isFinished = position == 0F && isLeaving
 
-            appBarLayout.alpha = position
+            toolbar.alpha = position
             backgroundView.alpha = position
 
             if (isFooterViewEnabled) {
@@ -234,14 +230,14 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
             }
 
             if (isFinished) {
-                appBarLayout.visibility = View.INVISIBLE
+                toolbar.visibility = View.INVISIBLE
                 backgroundView.visibility = View.INVISIBLE
 
                 if (isFooterViewEnabled) {
                     footerView.visibility = View.INVISIBLE
                 }
             } else {
-                appBarLayout.visibility = View.VISIBLE
+                toolbar.visibility = View.VISIBLE
                 backgroundView.visibility = View.VISIBLE
 
                 if (isFooterViewEnabled) {
@@ -310,14 +306,8 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
         callback = null
     }
 
-    private fun setupActionBar() {
-        val activity = activity
-        if (activity is AppCompatActivity) {
-            activity.setSupportActionBar(toolbar)
-            activity.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-            activity.supportActionBar?.setDisplayShowTitleEnabled(false)
-            toolbar.setNavigationOnClickListener { dismiss() }
-        }
+    private fun setupToolbar() {
+        toolbar.setNavigationOnClickListener { dismiss() }
     }
 
     private fun setupGestureImageView() {
@@ -342,11 +332,11 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
         // Click actions
         gestureImageView.setOnClickListener {
             if (isOverlayViewVisible) {
-                appBarLayout.animate()
+                toolbar.animate()
                     .alpha(0.0F)
                     .setDuration(100L)
                     .withEndAction {
-                        appBarLayout.visibility = View.INVISIBLE
+                        toolbar.visibility = View.INVISIBLE
                     }
                     .start()
 
@@ -362,11 +352,11 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
 
                 isOverlayViewVisible = false
             } else {
-                appBarLayout.animate()
+                toolbar.animate()
                     .alpha(1.0F)
                     .setDuration(100L)
                     .withStartAction {
-                        appBarLayout.visibility = View.VISIBLE
+                        toolbar.visibility = View.VISIBLE
                     }
                     .start()
 

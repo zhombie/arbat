@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.alexvasilkov.gestures.animation.ViewPosition
@@ -17,7 +16,6 @@ import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.MimeTypes
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -127,7 +125,6 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
         const val IS_FOOTER_VIEW_ENABLED = "is_footer_view_enabled"
     }
 
-    private lateinit var appBarLayout: AppBarLayout
     private lateinit var toolbar: MaterialToolbar
     private lateinit var backgroundView: View
     private lateinit var gestureFrameLayout: GestureFrameLayout
@@ -199,7 +196,6 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        appBarLayout = view.findViewById(R.id.appBarLayout)
         toolbar = view.findViewById(R.id.toolbar)
         backgroundView = view.findViewById(R.id.backgroundView)
         gestureFrameLayout = view.findViewById(R.id.gestureFrameLayout)
@@ -211,7 +207,7 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
         titleView = view.findViewById(R.id.titleView)
         subtitleView = view.findViewById(R.id.subtitleView)
 
-        setupActionBar()
+        setupToolbar()
         setupBackgroundView()
         setupGestureFrameLayout()
         setupInfo()
@@ -241,7 +237,7 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
         gestureFrameLayout.positionAnimator.addPositionUpdateListener { position, isLeaving ->
             val isFinished = position == 0F && isLeaving
 
-            appBarLayout.alpha = position
+            toolbar.alpha = position
             backgroundView.alpha = position
             controllerView.alpha = position
 
@@ -256,14 +252,14 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
             }
 
             if (isFinished) {
-                appBarLayout.visibility = View.INVISIBLE
+                toolbar.visibility = View.INVISIBLE
                 backgroundView.visibility = View.INVISIBLE
 
                 if (isFooterViewEnabled) {
                     footerView.visibility = View.INVISIBLE
                 }
             } else {
-                appBarLayout.visibility = View.VISIBLE
+                toolbar.visibility = View.VISIBLE
                 backgroundView.visibility = View.VISIBLE
 
                 if (isFooterViewEnabled) {
@@ -343,14 +339,8 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
         callback = null
     }
 
-    private fun setupActionBar() {
-        val activity = activity
-        if (activity is AppCompatActivity) {
-            activity.setSupportActionBar(toolbar)
-            activity.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-            activity.supportActionBar?.setDisplayShowTitleEnabled(false)
-            toolbar.setNavigationOnClickListener { dismiss() }
-        }
+    private fun setupToolbar() {
+        toolbar.setNavigationOnClickListener { dismiss() }
     }
 
     private fun setupBackgroundView() {
@@ -377,11 +367,11 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
         // Click actions
         gestureFrameLayout.setOnClickListener {
             if (isOverlayViewVisible) {
-                appBarLayout.animate()
+                toolbar.animate()
                     .alpha(0.0F)
                     .setDuration(50L)
                     .withEndAction {
-                        appBarLayout.visibility = View.INVISIBLE
+                        toolbar.visibility = View.INVISIBLE
                     }
                     .start()
 
@@ -402,11 +392,11 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
 
                 isOverlayViewVisible = false
             } else {
-                appBarLayout.animate()
+                toolbar.animate()
                     .alpha(1.0F)
                     .setDuration(50L)
                     .withStartAction {
-                        appBarLayout.visibility = View.VISIBLE
+                        toolbar.visibility = View.VISIBLE
                     }
                     .start()
 
@@ -519,8 +509,8 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
                 if (state == Player.STATE_ENDED) {
                     player?.seekTo(0)
 
-                    appBarLayout.alpha = 1.0F
-                    appBarLayout.visibility = View.VISIBLE
+                    toolbar.alpha = 1.0F
+                    toolbar.visibility = View.VISIBLE
 
                     controllerView.alpha = 1.0F
                     controllerView.visibility = View.VISIBLE

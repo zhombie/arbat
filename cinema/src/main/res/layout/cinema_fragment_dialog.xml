@@ -6,24 +6,6 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@color/cinema_dark_black_alpha_60"
-        android:elevation="0dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/transparent"
-            android:backgroundTint="@android:color/transparent"
-            app:navigationIcon="@drawable/cinema_ic_arrow"
-            app:navigationIconTint="@color/cinema_white" />
-
-    </com.google.android.material.appbar.AppBarLayout>
-
     <View
         android:id="@+id/backgroundView"
         android:layout_width="match_parent"
@@ -43,6 +25,14 @@
             android:layout_height="match_parent" />
 
     </com.alexvasilkov.gestures.views.GestureFrameLayout>
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/cinema_dark_black_alpha_60"
+        app:navigationIcon="@drawable/cinema_ic_arrow"
+        app:navigationIconTint="@color/cinema_white" />
 
     <FrameLayout
         android:id="@+id/controllerView"
@@ -96,7 +86,7 @@
         android:layout_gravity="bottom"
         android:background="@color/cinema_dark_black_alpha_60"
         android:gravity="center_vertical"
-        android:minHeight="70dp"
+        android:minHeight="56dp"
         android:orientation="vertical">
 
         <com.google.android.material.textview.MaterialTextView
@@ -112,7 +102,7 @@
             android:singleLine="false"
             android:textAllCaps="false"
             android:textColor="@android:color/white"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:textStyle="normal"
             tools:text="Image title" />
 
@@ -130,8 +120,9 @@
             android:singleLine="true"
             android:textAllCaps="false"
             android:textColor="@android:color/white"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="normal"
+            tools:ignore="SmallSp"
             tools:text="Image creation date" />
 
     </LinearLayout>
