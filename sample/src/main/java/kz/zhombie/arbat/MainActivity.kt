@@ -74,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         imageLoader = null
 
         radio?.release()
+        radio?.let { lifecycle.removeObserver(it) }
         radio = null
     }
 
@@ -142,6 +143,8 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     private fun setupRadio() {
+        Radio.init(true)
+
         fun ensureExistence(block: () -> Unit) {
             if (radio == null) {
                 Toast.makeText(this, "Create at first! Click on \"Create\" button", Toast.LENGTH_SHORT).show()
@@ -156,10 +159,13 @@ class MainActivity : AppCompatActivity() {
             radio = Radio.Builder(this)
                 .create(listener)
                 .start(AUDIO_URL)
+
+            radio?.let { lifecycle.addObserver(it) }
         }
 
         resetButton?.setOnClickListener {
             radio?.release()
+            radio?.let { lifecycle.removeObserver(it) }
             radio = null
 
             statusView?.text = "Status: UNKNOWN"

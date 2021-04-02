@@ -2,8 +2,15 @@ package kz.zhombie.radio
 
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.LifecycleObserver
 
-interface Radio {
+interface Radio : LifecycleObserver {
+    companion object {
+        fun init(isLoggingEnabled: Boolean) {
+            Settings.setLoggingEnabled(isLoggingEnabled)
+        }
+    }
+
     class Builder constructor(private val context: Context) {
         fun create(listener: Listener? = null): Radio {
             return RadioStation.create(context, listener)

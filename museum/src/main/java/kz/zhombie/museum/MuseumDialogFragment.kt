@@ -14,8 +14,8 @@ import com.alexvasilkov.gestures.views.GestureImageView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.textview.MaterialTextView
 
-class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.museum_fragment_dialog),
-    MuseumDialogFragmentListener {
+class MuseumDialogFragment private constructor(
+) : BaseDialogFragment(R.layout.museum_fragment_dialog), MuseumDialogFragmentListener {
 
     companion object {
         private val TAG: String = MuseumDialogFragment::class.java.simpleName

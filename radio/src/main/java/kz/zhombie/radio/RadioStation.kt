@@ -3,6 +3,8 @@ package kz.zhombie.radio
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.OnLifecycleEvent
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
@@ -23,6 +25,19 @@ internal class RadioStation private constructor(
     }
 
     private var player: SimpleExoPlayer? = null
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    @Suppress("unused")
+    private fun onResume() {
+        Logger.debug(TAG, "onResume()")
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    @Suppress("unused")
+    private fun onDestroy() {
+        Logger.debug(TAG, "onDestroy()")
+        release()
+    }
 
     override fun start(uri: String, playWhenReady: Boolean): Radio {
         start(uri = Uri.parse(uri), playWhenReady = playWhenReady)

@@ -20,8 +20,8 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.textview.MaterialTextView
 
-class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.cinema_fragment_dialog),
-    CinemaDialogFragmentListener {
+class CinemaDialogFragment private constructor(
+) : BaseDialogFragment(R.layout.cinema_fragment_dialog), CinemaDialogFragmentListener {
 
     companion object {
         private val TAG: String = CinemaDialogFragment::class.java.simpleName
