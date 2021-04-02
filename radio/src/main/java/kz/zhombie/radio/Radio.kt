@@ -14,6 +14,7 @@ interface Radio {
     fun start(uri: String, playWhenReady: Boolean = true): Radio
     fun start(uri: Uri, playWhenReady: Boolean = true): Radio
 
+    fun isReleased(): Boolean
     fun release()
 
     // Media control

@@ -1,5 +1,6 @@
 package kz.zhombie.arbat
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
@@ -10,9 +11,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.HandlerCompat
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.textview.MaterialTextView
 import kz.zhombie.cinema.CinemaDialogFragment
 import kz.zhombie.museum.MuseumDialogFragment
 import kz.zhombie.radio.Radio
+import kz.zhombie.radio.formatToDigitalClock
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,6 +30,9 @@ class MainActivity : AppCompatActivity() {
 
     private var imageView: ImageView? = null
     private var imageView2: ImageView? = null
+    private var statusView: MaterialTextView? = null
+    private var currentPositionView: MaterialTextView? = null
+    private var durationView: MaterialTextView? = null
     private var createButton: MaterialButton? = null
     private var resetButton: MaterialButton? = null
     private var playButton: MaterialButton? = null
@@ -45,6 +51,9 @@ class MainActivity : AppCompatActivity() {
 
         imageView = findViewById(R.id.imageView)
         imageView2 = findViewById(R.id.imageView2)
+        statusView = findViewById(R.id.statusView)
+        currentPositionView = findViewById(R.id.currentPositionView)
+        durationView = findViewById(R.id.durationView)
         createButton = findViewById(R.id.createButton)
         resetButton = findViewById(R.id.resetButton)
         playButton = findViewById(R.id.playButton)
@@ -131,6 +140,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setupRadio() {
         fun ensureExistence(block: () -> Unit) {
             if (radio == null) {
@@ -144,12 +154,17 @@ class MainActivity : AppCompatActivity() {
             radio?.release()
             radio = null
             radio = Radio.Builder(this)
-                .create()
+                .create(listener)
                 .start(AUDIO_URL)
         }
 
         resetButton?.setOnClickListener {
             radio?.release()
+            radio = null
+
+            statusView?.text = "Status: UNKNOWN"
+            currentPositionView?.text = "Current position: UNKNOWN"
+            durationView?.text = "Duration: UNKNOWN"
         }
 
         playButton?.setOnClickListener {
@@ -167,6 +182,33 @@ class MainActivity : AppCompatActivity() {
         playOrPauseButton?.setOnClickListener {
             ensureExistence {
                 radio?.playOrPause()
+            }
+        }
+    }
+
+    private val listener by lazy {
+        object : Radio.Listener {
+            override fun onPlayingStateChanged(isPlaying: Boolean) {
+            }
+
+            @SuppressLint("SetTextI18n")
+            override fun onPlaybackStateChanged(state: Radio.PlaybackState) {
+                when (state) {
+                    Radio.PlaybackState.IDLE -> {
+                        statusView?.text = "Status: IDLE"
+                    }
+                    Radio.PlaybackState.BUFFERING -> {
+                        statusView?.text = "Status: BUFFERING"
+                    }
+                    Radio.PlaybackState.READY -> {
+                        statusView?.text = "Status: READY"
+                        currentPositionView?.text = "Current position: ${radio?.formatToDigitalClock(radio?.getCurrentPosition())}"
+                        durationView?.text = "Duration: ${radio?.formatToDigitalClock(radio?.getDuration())}"
+                    }
+                    Radio.PlaybackState.ENDED -> {
+                        statusView?.text = "Status: ENDED"
+                    }
+                }
             }
         }
     }

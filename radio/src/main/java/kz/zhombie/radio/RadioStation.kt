@@ -35,6 +35,14 @@ internal class RadioStation private constructor(
         return this
     }
 
+    override fun isReleased(): Boolean {
+        return player == null
+    }
+
+    override fun release() {
+        releasePlayer()
+    }
+
     override fun play() {
         player?.play()
     }
@@ -69,10 +77,6 @@ internal class RadioStation private constructor(
 
     override fun getBufferedPercentage(): Int {
         return player?.bufferedPercentage ?: -1
-    }
-
-    override fun release() {
-        releasePlayer()
     }
 
     private fun setupPlayer(playWhenReady: Boolean): SimpleExoPlayer? {
