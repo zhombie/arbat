@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.google.android.exoplayer2.*
+import com.google.android.exoplayer2.analytics.AnalyticsListener
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
@@ -47,6 +48,30 @@ internal class RadioStation private constructor(
         togglePlayOrPause()
     }
 
+    override fun seekTo(position: Long) {
+        player?.seekTo(position)
+    }
+
+    override fun getCurrentPosition(): Long {
+        return player?.currentPosition ?: -1
+    }
+
+    override fun getDuration(): Long {
+        return player?.duration ?: -1
+    }
+
+    override fun getBufferedPosition(): Long {
+        return player?.bufferedPosition ?: -1
+    }
+
+    override fun getBufferedTotalPosition(): Long {
+        return player?.totalBufferedDuration ?: -1
+    }
+
+    override fun getBufferedPercentage(): Int {
+        return player?.bufferedPercentage ?: -1
+    }
+
     override fun release() {
         releasePlayer()
     }
@@ -59,6 +84,7 @@ internal class RadioStation private constructor(
 
             player?.playWhenReady = playWhenReady
             player?.pauseAtEndOfMediaItems = true
+            player?.setHandleAudioBecomingNoisy(true)
             player?.addListener(eventListener)
             player?.repeatMode = SimpleExoPlayer.REPEAT_MODE_OFF
             player?.setWakeMode(C.WAKE_MODE_NONE)
@@ -140,6 +166,12 @@ internal class RadioStation private constructor(
             override fun onPlayerError(error: ExoPlaybackException) {
                 error.printStackTrace()
             }
+        }
+    }
+
+    private val analyticsListener by lazy {
+        object : AnalyticsListener {
+
         }
     }
 
