@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.analytics.AnalyticsListener
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
@@ -166,12 +165,6 @@ internal class RadioStation private constructor(
             override fun onPlayerError(error: ExoPlaybackException) {
                 error.printStackTrace()
             }
-        }
-    }
-
-    private val analyticsListener by lazy {
-        object : AnalyticsListener {
-
         }
     }
 
