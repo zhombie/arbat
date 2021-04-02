@@ -2,7 +2,9 @@ package kz.zhombie.radio
 
 import android.content.Context
 import android.net.Uri
+import android.os.Looper
 import android.util.Log
+import androidx.core.os.HandlerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.OnLifecycleEvent
 import com.google.android.exoplayer2.*
@@ -25,6 +27,10 @@ internal class RadioStation private constructor(
     }
 
     private var player: SimpleExoPlayer? = null
+
+    private val handler by lazy {
+        HandlerCompat.createAsync(Looper.getMainLooper())
+    }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     @Suppress("unused")
@@ -163,6 +169,8 @@ internal class RadioStation private constructor(
     private val eventListener by lazy {
         object : Player.EventListener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                updateCurrentPlayerPosition()
+
                 listener?.onPlayingStateChanged(isPlaying)
             }
 
@@ -184,6 +192,24 @@ internal class RadioStation private constructor(
             override fun onPlayerError(error: ExoPlaybackException) {
                 error.printStackTrace()
             }
+        }
+    }
+
+    private fun updateCurrentPlayerPosition() {
+        val position = getCurrentPosition()
+        if (position > -1) {
+            listener?.onPlaybackPositionChanged(position)
+        }
+
+        if (player?.isPlaying == true) {
+            HandlerCompat.postDelayed(
+                handler,
+                this::updateCurrentPlayerPosition,
+                "timer",
+                500L
+            )
+        } else {
+            handler.removeCallbacksAndMessages("timer")
         }
     }
 

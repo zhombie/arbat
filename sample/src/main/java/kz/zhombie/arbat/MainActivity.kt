@@ -17,6 +17,7 @@ import kz.zhombie.museum.MuseumDialogFragment
 import kz.zhombie.radio.Radio
 import kz.zhombie.radio.formatToDigitalClock
 
+@SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
     companion object {
@@ -141,7 +142,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("SetTextI18n")
     private fun setupRadio() {
         Radio.init(true)
 
@@ -197,7 +197,6 @@ class MainActivity : AppCompatActivity() {
             override fun onPlayingStateChanged(isPlaying: Boolean) {
             }
 
-            @SuppressLint("SetTextI18n")
             override fun onPlaybackStateChanged(state: Radio.PlaybackState) {
                 when (state) {
                     Radio.PlaybackState.IDLE -> {
@@ -215,6 +214,10 @@ class MainActivity : AppCompatActivity() {
                         statusView?.text = "Status: ENDED"
                     }
                 }
+            }
+
+            override fun onPlaybackPositionChanged(position: Long) {
+                currentPositionView?.text = "Current position: ${radio?.formatToDigitalClock(position)}"
             }
         }
     }

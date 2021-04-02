@@ -51,6 +51,7 @@ interface Radio : LifecycleObserver {
     interface Listener {
         fun onPlayingStateChanged(isPlaying: Boolean)
         fun onPlaybackStateChanged(state: PlaybackState)
+        fun onPlaybackPositionChanged(position: Long)
     }
 }
 
