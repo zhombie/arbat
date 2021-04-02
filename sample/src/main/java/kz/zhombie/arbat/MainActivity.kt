@@ -219,6 +219,10 @@ class MainActivity : AppCompatActivity() {
             override fun onPlaybackPositionChanged(position: Long) {
                 currentPositionView?.text = "Current position: ${radio?.formatToDigitalClock(position)}"
             }
+
+            override fun onPlayerError(cause: Throwable?) {
+                cause?.printStackTrace()
+            }
         }
     }
 

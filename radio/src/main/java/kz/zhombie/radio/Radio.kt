@@ -32,6 +32,8 @@ interface Radio : LifecycleObserver {
     fun seekTo(position: Long)  // milliseconds
 
     // Information
+    fun getCurrentSource(): Uri?
+
     fun getCurrentPosition(): Long
     fun getDuration(): Long
 
@@ -52,6 +54,7 @@ interface Radio : LifecycleObserver {
         fun onPlayingStateChanged(isPlaying: Boolean)
         fun onPlaybackStateChanged(state: PlaybackState)
         fun onPlaybackPositionChanged(position: Long)
+        fun onPlayerError(cause: Throwable?)
     }
 }
 

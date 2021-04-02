@@ -80,6 +80,10 @@ internal class RadioStation private constructor(
         player?.seekTo(position)
     }
 
+    override fun getCurrentSource(): Uri? {
+        return player?.currentMediaItem?.playbackProperties?.uri
+    }
+
     override fun getCurrentPosition(): Long {
         return player?.currentPosition ?: -1
     }
@@ -122,6 +126,14 @@ internal class RadioStation private constructor(
         if (player == null) {
             Log.w(TAG, "Player is not initialized!")
         } else {
+            if (player?.isPlaying == true) {
+                player?.pause()
+            }
+
+            if ((player?.mediaItemCount ?: 0) > 0) {
+                player?.clearMediaItems()
+            }
+
             val mediaItem = MediaItem.Builder()
                 .setUri(uri)
                 .setMimeType(MimeTypes.BASE_TYPE_AUDIO)
@@ -190,7 +202,7 @@ internal class RadioStation private constructor(
             }
 
             override fun onPlayerError(error: ExoPlaybackException) {
-                error.printStackTrace()
+                listener?.onPlayerError(error.cause)
             }
         }
     }
