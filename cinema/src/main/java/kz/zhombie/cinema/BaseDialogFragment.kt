@@ -18,7 +18,7 @@ open class BaseDialogFragment constructor(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        activity?.onBackPressedDispatcher?.addCallback(this, onBackPressedCallback)
+//        activity?.onBackPressedDispatcher?.addCallback(this, onBackPressedCallback)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -30,15 +30,15 @@ open class BaseDialogFragment constructor(
     override fun onDestroy() {
         super.onDestroy()
 
-        onBackPressedCallback.remove()
+//        onBackPressedCallback.remove()
     }
 
-    private val onBackPressedCallback by lazy {
-        object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                dismiss()
-            }
-        }
-    }
+//    private val onBackPressedCallback by lazy {
+//        object : OnBackPressedCallback(true) {
+//            override fun handleOnBackPressed() {
+//                dismiss()
+//            }
+//        }
+//    }
 
 }
