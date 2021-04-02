@@ -5,10 +5,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
-import android.view.ViewTreeObserver
+import android.view.ViewTreeObserver.*
 import android.widget.LinearLayout
 import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
 import com.alexvasilkov.gestures.Settings
 import com.alexvasilkov.gestures.animation.ViewPosition
 import com.alexvasilkov.gestures.views.GestureImageView
@@ -119,11 +118,13 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
 
         fun show(fragmentManager: FragmentManager): MuseumDialogFragment {
             val fragment = build()
-            val transaction = fragmentManager.beginTransaction()
-            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-            transaction
-                .add(android.R.id.content, fragment)
-                .commit()
+//            val transaction = fragmentManager.beginTransaction()
+//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+//            transaction
+//                .add(android.R.id.content, fragment)
+//                .commit()
+            fragment.isCancelable = true
+            fragment.show(fragmentManager, null)
             return fragment
         }
     }
@@ -165,7 +166,7 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
 
             if (value != null) {
                 if (onGlobalLayoutListener == null) {
-                    onGlobalLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+                    onGlobalLayoutListener = OnGlobalLayoutListener {
                         onTrackViewPosition(value)
                     }
 
@@ -176,7 +177,7 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
             }
         }
 
-    private var onGlobalLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+    private var onGlobalLayoutListener: OnGlobalLayoutListener? = null
 
     private lateinit var uri: Uri
     private var title: String? = null
@@ -252,6 +253,8 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
             }
 
             if (isFinished) {
+                Logger.debug(TAG, "isFinished")
+
                 if (!isPictureShowCalled) {
                     callback?.onPictureShow(0L)
                     isPictureShowCalled = true
@@ -267,7 +270,7 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
         if (savedInstanceState == null) {
             gestureImageView.positionAnimator.enter(startViewPosition, true)
 
-            gestureImageView.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            gestureImageView.viewTreeObserver.addOnPreDrawListener(object : OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
                     gestureImageView.viewTreeObserver.removeOnPreDrawListener(this)
                     callback?.onPictureHide(17L)
@@ -279,10 +282,15 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
     }
 
     override fun onCancel(dialog: DialogInterface) {
+        Logger.debug(TAG, "onCancel()")
+
         dismiss()
     }
 
     override fun dismiss() {
+        Logger.debug(TAG, "dismiss()")
+
+        Logger.debug(TAG, "dismiss() -> isLeaving: ${gestureImageView.positionAnimator.isLeaving}")
         if (!gestureImageView.positionAnimator.isLeaving) {
             gestureImageView.positionAnimator.exit(true)
         }
@@ -290,6 +298,8 @@ class MuseumDialogFragment private constructor() : BaseDialogFragment(R.layout.m
 
     override fun onDestroy() {
         super.onDestroy()
+
+        Logger.debug(TAG, "onDestroy()")
 
         if (!isPictureShowCalled) {
             callback?.onPictureShow(0L)

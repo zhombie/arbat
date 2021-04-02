@@ -33,6 +33,8 @@ class MainActivity : AppCompatActivity() {
 
         imageLoader = CoilImageLoader(this)
 
+        MuseumDialogFragment.init(requireNotNull(imageLoader), true)
+
         imageView?.let { imageView ->
             imageLoader?.loadSmallImage(this, imageView, Uri.parse(IMAGE_URL))
         }

@@ -7,7 +7,6 @@ import android.view.*
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
 import com.alexvasilkov.gestures.animation.ViewPosition
 import com.alexvasilkov.gestures.views.GestureFrameLayout
 import com.google.android.exoplayer2.*
@@ -108,11 +107,13 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
 
         fun show(fragmentManager: FragmentManager): CinemaDialogFragment {
             val fragment = build()
-            val transaction = fragmentManager.beginTransaction()
-            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-            transaction
-                .add(android.R.id.content, fragment)
-                .commit()
+//            val transaction = fragmentManager.beginTransaction()
+//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+//            transaction
+//                .add(android.R.id.content, fragment)
+//                .commit()
+            fragment.isCancelable = true
+            fragment.show(fragmentManager, null)
             return fragment
         }
     }
@@ -288,8 +289,7 @@ class CinemaDialogFragment private constructor() : BaseDialogFragment(R.layout.c
 
         gestureFrameLayout.positionAnimator.enter(startViewPosition, savedInstanceState == null)
 
-        gestureFrameLayout.viewTreeObserver.addOnPreDrawListener(object :
-            ViewTreeObserver.OnPreDrawListener {
+        gestureFrameLayout.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
                 gestureFrameLayout.viewTreeObserver.removeOnPreDrawListener(this)
                 callback?.onMovieHide(17L)
