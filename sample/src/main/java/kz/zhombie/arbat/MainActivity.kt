@@ -24,9 +24,9 @@ class MainActivity : AppCompatActivity() {
         private const val IMAGE_URL = "https://images.pexels.com/photos/2246476/pexels-photo-2246476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
 
         private const val VIDEO_THUMBNAIL_URL = "https://i.ytimg.com/vi/2vgZTTLW81k/hqdefault.jpg?sqp=-oaymwEjCNACELwBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAR_mpN_wJtXsfcZpTvUgX5WLUdGQ"
-        private const val VIDEO_URL = "https://datanapps.com/public/dnarestapi/media/videos/MyExerciseMotivation.mp4"
+        private const val VIDEO_URL = "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
 
-        private const val AUDIO_URL = "https://cdn9.sefon.pro/prev/BJnG5DGWT87c2aPcXdhxaQ/1617434569/55/%D0%9C%D0%B8%D1%85%D0%B0%D0%B8%D0%BB%20%D0%9A%D1%80%D1%83%D0%B3%20-%20%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80%D1%81%D0%BA%D0%B8%D0%B9%20%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%20%28192kbps%29.mp3"
+        private const val AUDIO_URL = "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3"
     }
 
     private var imageView: ImageView? = null
