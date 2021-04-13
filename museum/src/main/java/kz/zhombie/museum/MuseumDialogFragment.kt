@@ -284,7 +284,10 @@ class MuseumDialogFragment private constructor(
         if (savedInstanceState == null) {
             val startViewPosition = startViewPosition
             if (startViewPosition == null) {
-                artworkView?.let { artworkView ->
+                val artworkView = artworkView
+                if (artworkView == null) {
+                    gestureImageView.positionAnimator.enter(true)
+                } else {
                     gestureImageView.positionAnimator.enter(artworkView, true)
                 }
             } else {
