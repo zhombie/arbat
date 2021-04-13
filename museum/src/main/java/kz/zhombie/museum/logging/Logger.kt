@@ -1,6 +1,7 @@
-package kz.zhombie.museum
+package kz.zhombie.museum.logging
 
 import android.util.Log
+import kz.zhombie.museum.Settings
 
 internal object Logger {
     private const val TAG = "Museum"

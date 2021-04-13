@@ -19,6 +19,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.textview.MaterialTextView
+import kz.zhombie.cinema.base.BaseDialogFragment
 
 class CinemaDialogFragment private constructor(
 ) : BaseDialogFragment(R.layout.cinema_fragment_dialog), CinemaDialogFragmentListener {

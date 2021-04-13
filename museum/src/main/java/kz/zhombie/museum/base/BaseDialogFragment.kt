@@ -1,4 +1,4 @@
-package kz.zhombie.museum
+package kz.zhombie.museum.base
 
 import android.app.Dialog
 import android.os.Bundle

@@ -1,9 +1,8 @@
-package kz.zhombie.cinema
+package kz.zhombie.cinema.base
 
 import android.app.Dialog
 import android.os.Bundle
 import android.view.Window
-import androidx.activity.OnBackPressedCallback
 import androidx.annotation.LayoutRes
 import androidx.fragment.app.DialogFragment
 

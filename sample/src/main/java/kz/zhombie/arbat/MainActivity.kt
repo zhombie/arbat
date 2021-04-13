@@ -21,7 +21,7 @@ import kz.zhombie.radio.formatToDigitalClock
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        private const val IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/1200px-Image_created_with_a_mobile_phone.png"
+        private const val IMAGE_URL = "https://images.pexels.com/photos/2246476/pexels-photo-2246476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
 
         private const val VIDEO_THUMBNAIL_URL = "https://i.ytimg.com/vi/2vgZTTLW81k/hqdefault.jpg?sqp=-oaymwEjCNACELwBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAR_mpN_wJtXsfcZpTvUgX5WLUdGQ"
         private const val VIDEO_URL = "https://datanapps.com/public/dnarestapi/media/videos/MyExerciseMotivation.mp4"

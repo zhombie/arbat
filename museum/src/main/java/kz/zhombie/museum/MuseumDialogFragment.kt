@@ -13,6 +13,8 @@ import com.alexvasilkov.gestures.animation.ViewPosition
 import com.alexvasilkov.gestures.views.GestureImageView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.textview.MaterialTextView
+import kz.zhombie.museum.base.BaseDialogFragment
+import kz.zhombie.museum.logging.Logger
 
 class MuseumDialogFragment private constructor(
 ) : BaseDialogFragment(R.layout.museum_fragment_dialog), MuseumDialogFragmentListener {
@@ -29,15 +31,23 @@ class MuseumDialogFragment private constructor(
             uri: Uri,
             title: String? = null,
             subtitle: String? = null,
-            startViewPosition: ViewPosition,
+            startViewPosition: ViewPosition? = null,
             isFooterViewEnabled: Boolean
         ): MuseumDialogFragment {
             val fragment = MuseumDialogFragment()
             fragment.arguments = Bundle().apply {
                 putString(BundleKey.URI, uri.toString())
+
                 putString(BundleKey.TITLE, title)
-                if (!subtitle.isNullOrBlank()) putString(BundleKey.SUBTITLE, subtitle)
-                putString(BundleKey.START_VIEW_POSITION, startViewPosition.pack())
+
+                if (!subtitle.isNullOrBlank()) {
+                    putString(BundleKey.SUBTITLE, subtitle)
+                }
+
+                if (startViewPosition != null) {
+                    putString(BundleKey.START_VIEW_POSITION, startViewPosition.pack())
+                }
+
                 putBoolean(BundleKey.IS_FOOTER_VIEW_ENABLED, isFooterViewEnabled)
             }
             return fragment
@@ -50,7 +60,7 @@ class MuseumDialogFragment private constructor(
         private var uri: Uri? = null
         private var title: String? = null
         private var subtitle: String? = null
-        private var viewPosition: ViewPosition? = null
+        private var startViewPosition: ViewPosition? = null
         private var isFooterViewEnabled: Boolean = false
         private var callback: Callback? = null
 
@@ -80,7 +90,7 @@ class MuseumDialogFragment private constructor(
         }
 
         fun setStartViewPosition(view: View): Builder {
-            this.viewPosition = ViewPosition.from(view)
+            this.startViewPosition = ViewPosition.from(view)
             return this
         }
 
@@ -99,9 +109,7 @@ class MuseumDialogFragment private constructor(
                 uri = requireNotNull(uri) { "Museum artwork uri is mandatory value" },
                 title = title,
                 subtitle = subtitle,
-                startViewPosition = requireNotNull(viewPosition) {
-                    "Museum artwork needs start view position, in order to make smooth transition animation"
-                },
+                startViewPosition = startViewPosition,
                 isFooterViewEnabled = isFooterViewEnabled
             ).apply {
                 this@Builder.artworkView?.let { setArtworkView(it) }
@@ -182,7 +190,7 @@ class MuseumDialogFragment private constructor(
     private lateinit var uri: Uri
     private var title: String? = null
     private var subtitle: String? = null
-    private lateinit var startViewPosition: ViewPosition
+    private var startViewPosition: ViewPosition? = null
     private var isFooterViewEnabled: Boolean = false
 
     override fun getTheme(): Int {
@@ -196,10 +204,16 @@ class MuseumDialogFragment private constructor(
 
         val arguments = arguments
         require(arguments != null) { "Provide arguments!" }
+
         uri = Uri.parse(requireNotNull(arguments.getString(BundleKey.URI)))
         title = arguments.getString(BundleKey.TITLE)
         subtitle = arguments.getString(BundleKey.SUBTITLE)
-        startViewPosition = ViewPosition.unpack(arguments.getString(BundleKey.START_VIEW_POSITION))
+
+        val startViewPosition = arguments.getString(BundleKey.START_VIEW_POSITION)
+        if (!startViewPosition.isNullOrBlank()) {
+            this.startViewPosition = ViewPosition.unpack(startViewPosition)
+        }
+
         isFooterViewEnabled = arguments.getBoolean(BundleKey.IS_FOOTER_VIEW_ENABLED)
     }
 
@@ -268,7 +282,14 @@ class MuseumDialogFragment private constructor(
         }
 
         if (savedInstanceState == null) {
-            gestureImageView.positionAnimator.enter(startViewPosition, true)
+            val startViewPosition = startViewPosition
+            if (startViewPosition == null) {
+                artworkView?.let { artworkView ->
+                    gestureImageView.positionAnimator.enter(artworkView, true)
+                }
+            } else {
+                gestureImageView.positionAnimator.enter(startViewPosition, true)
+            }
 
             gestureImageView.viewTreeObserver.addOnPreDrawListener(object : OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
