@@ -320,8 +320,10 @@ class CinemaDialogFragment private constructor(
     }
 
     override fun dismiss() {
-        if (!gestureFrameLayout.positionAnimator.isLeaving) {
-            gestureFrameLayout.positionAnimator.exit(true)
+        if (this::gestureFrameLayout.isInitialized) {
+            if (!gestureFrameLayout.positionAnimator.isLeaving) {
+                gestureFrameLayout.positionAnimator.exit(true)
+            }
         }
     }
 

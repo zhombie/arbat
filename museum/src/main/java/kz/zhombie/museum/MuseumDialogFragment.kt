@@ -314,9 +314,11 @@ class MuseumDialogFragment private constructor(
     override fun dismiss() {
         Logger.debug(TAG, "dismiss()")
 
-        Logger.debug(TAG, "dismiss() -> isLeaving: ${gestureImageView.positionAnimator.isLeaving}")
-        if (!gestureImageView.positionAnimator.isLeaving) {
-            gestureImageView.positionAnimator.exit(true)
+        if (this::gestureImageView.isInitialized) {
+            Logger.debug(TAG, "dismiss() -> isLeaving: ${gestureImageView.positionAnimator.isLeaving}")
+            if (!gestureImageView.positionAnimator.isLeaving) {
+                gestureImageView.positionAnimator.exit(true)
+            }
         }
     }
 
