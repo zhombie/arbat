@@ -52,11 +52,11 @@ dependencies {
     api 'com.alexvasilkov:gesture-views:2.7.1'
 
     // ExoPlayer
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.12.2'
-    implementation 'com.google.android.exoplayer:exoplayer-dash:2.12.2'
-    implementation 'com.google.android.exoplayer:exoplayer-hls:2.12.2'
-    implementation 'com.google.android.exoplayer:exoplayer-smoothstreaming:2.12.2'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.12.2'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.13.3'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.13.3'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.13.3'
+    implementation 'com.google.android.exoplayer:exoplayer-smoothstreaming:2.13.3'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.3'
 
     // Material components
     implementation 'com.google.android.material:material:1.3.0'

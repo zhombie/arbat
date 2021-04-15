@@ -10,7 +10,7 @@ import androidx.lifecycle.OnLifecycleEvent
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
 
 internal class RadioStation private constructor(
@@ -122,7 +122,7 @@ internal class RadioStation private constructor(
         }
     }
 
-    private fun setUri(uri: Uri) {
+    private fun setUri(uri: Uri) = try {
         if (player == null) {
             Log.w(TAG, "Player is not initialized!")
         } else {
@@ -139,12 +139,10 @@ internal class RadioStation private constructor(
                 .setMimeType(MimeTypes.BASE_TYPE_AUDIO)
                 .build()
 
-            val httpDataSourceFactory = DefaultHttpDataSourceFactory(
-                ExoPlayerLibraryInfo.DEFAULT_USER_AGENT,
-                20 * 1000,
-                20 * 1000,
-                true
-            )
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                .setAllowCrossProtocolRedirects(true)
+                .setConnectTimeoutMs(15 * 1000)
+                .setReadTimeoutMs(15 * 1000)
 
             val mediaSource = DefaultMediaSourceFactory(context)
                 .setDrmHttpDataSourceFactory(httpDataSourceFactory)
@@ -153,6 +151,9 @@ internal class RadioStation private constructor(
             player?.setMediaSource(mediaSource)
             player?.prepare()
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        listener?.onPlayerError(e)
     }
 
     private fun togglePlayOrPause() {

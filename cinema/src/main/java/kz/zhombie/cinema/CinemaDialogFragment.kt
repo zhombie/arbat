@@ -13,7 +13,7 @@ import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -217,24 +217,27 @@ class CinemaDialogFragment private constructor(
         setupControllerView()
         setupFooterView()
 
-        val mediaItem = MediaItem.Builder()
-            .setUri(uri)
-            .setMimeType(MimeTypes.BASE_TYPE_VIDEO)
-            .build()
+        try {
+            val mediaItem = MediaItem.Builder()
+                .setUri(uri)
+                .setMimeType(MimeTypes.BASE_TYPE_VIDEO)
+                .build()
 
-        val httpDataSourceFactory = DefaultHttpDataSourceFactory(
-            ExoPlayerLibraryInfo.DEFAULT_USER_AGENT,
-            20 * 1000,
-            20 * 1000,
-            true
-        )
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                .setAllowCrossProtocolRedirects(true)
+                .setConnectTimeoutMs(15 * 1000)
+                .setReadTimeoutMs(15 * 1000)
 
-        val mediaSource = DefaultMediaSourceFactory(requireContext())
-            .setDrmHttpDataSourceFactory(httpDataSourceFactory)
-            .createMediaSource(mediaItem)
+            val mediaSource = DefaultMediaSourceFactory(requireContext())
+                .setDrmHttpDataSourceFactory(httpDataSourceFactory)
+                .createMediaSource(mediaItem)
 
-        player?.setMediaSource(mediaSource)
-        player?.prepare()
+            player?.setMediaSource(mediaSource)
+            player?.prepare()
+        } catch (e: RuntimeException) {
+            e.printStackTrace()
+            eventListener.onPlayerError(ExoPlaybackException.createForUnexpected(e))
+        }
 
         gestureFrameLayout.positionAnimator.addPositionUpdateListener { position, isLeaving ->
             val isFinished = position == 0F && isLeaving
