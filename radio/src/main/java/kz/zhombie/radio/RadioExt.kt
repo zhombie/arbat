@@ -20,3 +20,11 @@ fun Radio.formatToDigitalClock(milliseconds: Long?): String {
         return "00:00"
     }
 }
+
+fun Radio.getDisplayDuration(): String {
+    return formatToDigitalClock(duration)
+}
+
+fun Radio.getDisplayCurrentPosition(): String {
+    return formatToDigitalClock(currentPosition)
+}

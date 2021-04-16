@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
@@ -16,11 +17,15 @@ import kz.zhombie.cinema.CinemaDialogFragment
 import kz.zhombie.museum.MuseumDialogFragment
 import kz.zhombie.radio.Radio
 import kz.zhombie.radio.formatToDigitalClock
+import kz.zhombie.radio.getDisplayCurrentPosition
+import kz.zhombie.radio.getDisplayDuration
 
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
     companion object {
+        private val TAG = MainActivity::class.java.simpleName
+
         private const val IMAGE_URL = "https://images.pexels.com/photos/2246476/pexels-photo-2246476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
 
         private const val VIDEO_THUMBNAIL_URL = "https://i.ytimg.com/vi/2vgZTTLW81k/hqdefault.jpg?sqp=-oaymwEjCNACELwBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAR_mpN_wJtXsfcZpTvUgX5WLUdGQ"
@@ -194,10 +199,12 @@ class MainActivity : AppCompatActivity() {
 
     private val listener by lazy {
         object : Radio.Listener {
-            override fun onPlayingStateChanged(isPlaying: Boolean) {
+            override fun onIsSourceLoadingChanged(isLoading: Boolean) {
             }
 
             override fun onPlaybackStateChanged(state: Radio.PlaybackState) {
+                Log.d(TAG, "onPlaybackStateChanged() -> duration: ${radio?.duration}")
+
                 when (state) {
                     Radio.PlaybackState.IDLE -> {
                         statusView?.text = "Status: IDLE"
@@ -207,8 +214,12 @@ class MainActivity : AppCompatActivity() {
                     }
                     Radio.PlaybackState.READY -> {
                         statusView?.text = "Status: READY"
-                        currentPositionView?.text = "Current position: ${radio?.formatToDigitalClock(radio?.getCurrentPosition())}"
-                        durationView?.text = "Duration: ${radio?.formatToDigitalClock(radio?.getDuration())}"
+
+                        currentPositionView?.text = "Current position: ${radio?.getDisplayCurrentPosition()}"
+
+                        if ((radio?.duration ?: -1) > -1) {
+                            durationView?.text = "Duration: ${radio?.getDisplayDuration()}"
+                        }
                     }
                     Radio.PlaybackState.ENDED -> {
                         statusView?.text = "Status: ENDED"
@@ -216,8 +227,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            override fun onIsPlayingStateChanged(isPlaying: Boolean) {
+            }
+
             override fun onPlaybackPositionChanged(position: Long) {
+                Log.d(TAG, "onPlaybackPositionChanged() -> duration: ${radio?.duration}")
+
                 currentPositionView?.text = "Current position: ${radio?.formatToDigitalClock(position)}"
+
+                if ((radio?.duration ?: -1) > -1) {
+                    durationView?.text = "Duration: ${radio?.getDisplayDuration()}"
+                }
             }
 
             override fun onPlayerError(cause: Throwable?) {

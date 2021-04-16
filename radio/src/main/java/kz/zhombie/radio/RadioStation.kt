@@ -9,7 +9,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.OnLifecycleEvent
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
+import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
+import com.google.android.exoplayer2.source.TrackGroupArray
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
 
@@ -32,18 +35,22 @@ internal class RadioStation private constructor(
         HandlerCompat.createAsync(Looper.getMainLooper())
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     @Suppress("unused")
-    private fun onResume() {
+    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    fun onResume() {
         Logger.debug(TAG, "onResume()")
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     @Suppress("unused")
-    private fun onDestroy() {
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    fun onDestroy() {
         Logger.debug(TAG, "onDestroy()")
         release()
     }
+
+    /**
+     * [Radio] implementation
+     */
 
     override fun start(uri: String, playWhenReady: Boolean): Radio {
         start(uri = Uri.parse(uri), playWhenReady = playWhenReady)
@@ -64,6 +71,10 @@ internal class RadioStation private constructor(
         releasePlayer()
     }
 
+    /**
+     * [RemoteControl] implementation
+     */
+
     override fun play() {
         player?.play()
     }
@@ -76,33 +87,56 @@ internal class RadioStation private constructor(
         togglePlayOrPause()
     }
 
+    override fun stop(reset: Boolean) {
+        player?.stop()
+
+        if (reset) {
+            player?.clearMediaItems()
+        }
+    }
+
     override fun seekTo(position: Long) {
         player?.seekTo(position)
     }
 
-    override fun getCurrentSource(): Uri? {
-        return player?.currentMediaItem?.playbackProperties?.uri
-    }
+    /**
+     * [TrackInformation] implementation
+     */
 
-    override fun getCurrentPosition(): Long {
-        return player?.currentPosition ?: -1
-    }
+    override val isSourceLoading: Boolean
+        get() = player?.isLoading == true
 
-    override fun getDuration(): Long {
-        return player?.duration ?: -1
-    }
+    override val isPlaying: Boolean
+        get() = player?.isPlaying == true
 
-    override fun getBufferedPosition(): Long {
-        return player?.bufferedPosition ?: -1
-    }
+    override val currentSource: Uri?
+        get() = player?.currentMediaItem?.playbackProperties?.uri
 
-    override fun getBufferedTotalPosition(): Long {
-        return player?.totalBufferedDuration ?: -1
-    }
+    override val duration: Long
+        get() = player?.duration ?: -1
 
-    override fun getBufferedPercentage(): Int {
-        return player?.bufferedPercentage ?: -1
-    }
+    override val currentPosition: Long
+        get() = player?.currentPosition ?: -1
+
+    override val currentPercentage: Float
+        get() = if (duration > -1 && currentPosition > -1) {
+            currentPosition * 100F / duration
+        } else {
+            0.0F
+        }
+
+    override val bufferedPosition: Long
+        get() = player?.bufferedPosition ?: -1
+
+    override val bufferedPercentage: Int
+        get() = player?.bufferedPercentage ?: -1
+
+    override val totalBufferedDuration: Long
+        get() = player?.totalBufferedDuration ?: -1
+
+    /**
+     * Internal methods
+     */
 
     private fun setupPlayer(playWhenReady: Boolean): SimpleExoPlayer? {
         return if (player == null) {
@@ -181,13 +215,34 @@ internal class RadioStation private constructor(
 
     private val eventListener by lazy {
         object : Player.EventListener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                updateCurrentPlayerPosition()
+            override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+                super.onTimelineChanged(timeline, reason)
+                Logger.debug(TAG, "onTimelineChanged() -> timeline: $timeline, reason: $reason")
+            }
 
-                listener?.onPlayingStateChanged(isPlaying)
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                super.onMediaItemTransition(mediaItem, reason)
+                Logger.debug(TAG, "onMediaItemTransition() -> mediaItem: $mediaItem, reason: $reason")
+            }
+
+            override fun onTracksChanged(trackGroups: TrackGroupArray, trackSelections: TrackSelectionArray) {
+                super.onTracksChanged(trackGroups, trackSelections)
+                Logger.debug(TAG, "onTracksChanged() -> trackGroups: $trackGroups, trackSelections: $trackSelections")
+            }
+
+            override fun onStaticMetadataChanged(metadataList: MutableList<Metadata>) {
+                super.onStaticMetadataChanged(metadataList)
+                Logger.debug(TAG, "onStaticMetadataChanged() -> metadataList: $metadataList")
+            }
+
+            override fun onIsLoadingChanged(isLoading: Boolean) {
+                super.onIsLoadingChanged(isLoading)
+                listener?.onIsSourceLoadingChanged(isLoading)
             }
 
             override fun onPlaybackStateChanged(state: Int) {
+                super.onPlaybackStateChanged(state)
+
                 when (state) {
                     Player.STATE_IDLE ->
                         listener?.onPlaybackStateChanged(Radio.PlaybackState.IDLE)
@@ -202,14 +257,58 @@ internal class RadioStation private constructor(
                 }
             }
 
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                super.onPlayWhenReadyChanged(playWhenReady, reason)
+                Logger.debug(TAG, "onPlayWhenReadyChanged() -> playWhenReady: $playWhenReady, reason: $reason")
+            }
+
+            override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
+                super.onPlaybackSuppressionReasonChanged(playbackSuppressionReason)
+                Logger.debug(TAG, "onPlaybackSuppressionReasonChanged() -> playbackSuppressionReason: $playbackSuppressionReason")
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                super.onIsPlayingChanged(isPlaying)
+                Logger.debug(TAG, "onIsPlayingChanged() -> isPlaying: $isPlaying")
+                updateCurrentPlayerPosition()
+                listener?.onIsPlayingStateChanged(isPlaying)
+            }
+
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                super.onRepeatModeChanged(repeatMode)
+                Logger.debug(TAG, "onRepeatModeChanged() -> repeatMode: $repeatMode")
+            }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                super.onShuffleModeEnabledChanged(shuffleModeEnabled)
+                Logger.debug(TAG, "onShuffleModeEnabledChanged() -> shuffleModeEnabled: $shuffleModeEnabled")
+            }
+
             override fun onPlayerError(error: ExoPlaybackException) {
+                super.onPlayerError(error)
+                Logger.debug(TAG, "onPlayerError() -> error: $error")
                 listener?.onPlayerError(error.cause)
+            }
+
+            override fun onPositionDiscontinuity(reason: Int) {
+                super.onPositionDiscontinuity(reason)
+                Logger.debug(TAG, "onPositionDiscontinuity() -> reason: $reason")
+            }
+
+            override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
+                super.onPlaybackParametersChanged(playbackParameters)
+                Logger.debug(TAG, "onPlaybackParametersChanged() -> playbackParameters: $playbackParameters")
+            }
+
+            override fun onEvents(player: Player, events: Player.Events) {
+                super.onEvents(player, events)
+                Logger.debug(TAG, "onEvents() -> events: $events")
             }
         }
     }
 
     private fun updateCurrentPlayerPosition() {
-        val position = getCurrentPosition()
+        val position = currentPosition
         if (position > -1) {
             listener?.onPlaybackPositionChanged(position)
         }
