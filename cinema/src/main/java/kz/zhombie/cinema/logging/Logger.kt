@@ -1,6 +1,7 @@
-package kz.zhombie.cinema
+package kz.zhombie.cinema.logging
 
 import android.util.Log
+import kz.zhombie.cinema.Settings
 
 internal object Logger {
     private const val TAG = "Cinema"
