@@ -11,7 +11,10 @@ import com.alexvasilkov.gestures.animation.ViewPosition
 import com.alexvasilkov.gestures.views.GestureFrameLayout
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
+import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
+import com.google.android.exoplayer2.source.TrackGroupArray
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
@@ -26,6 +29,10 @@ class CinemaDialogFragment private constructor(
 
     companion object {
         private val TAG: String = CinemaDialogFragment::class.java.simpleName
+
+        fun init(isLoggingEnabled: Boolean) {
+            Settings.setLoggingEnabled(isLoggingEnabled)
+        }
 
         private fun newInstance(
             uri: Uri,
@@ -493,22 +500,29 @@ class CinemaDialogFragment private constructor(
 
     private val eventListener by lazy {
         object : Player.EventListener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isPlaying) {
-                    playOrPauseButton.setIconResource(R.drawable.exo_icon_pause)
+            override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+                super.onTimelineChanged(timeline, reason)
+                Logger.debug(TAG, "onTimelineChanged() -> timeline: $timeline, reason: $reason")
+            }
 
-                    controllerViewAnimation = controllerView.animate()
-                        .setStartDelay(2500L)
-                        .withStartAction {
-                            controllerView.visibility = View.VISIBLE
-                        }
-                        .withEndAction {
-                            controllerView.visibility = View.INVISIBLE
-                        }
-                    controllerViewAnimation?.start()
-                } else {
-                    playOrPauseButton.setIconResource(R.drawable.exo_icon_play)
-                }
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                super.onMediaItemTransition(mediaItem, reason)
+                Logger.debug(TAG, "onMediaItemTransition() -> mediaItem: $mediaItem, reason: $reason")
+            }
+
+            override fun onTracksChanged(trackGroups: TrackGroupArray, trackSelections: TrackSelectionArray) {
+                super.onTracksChanged(trackGroups, trackSelections)
+                Logger.debug(TAG, "onTracksChanged() -> trackGroups: $trackGroups, trackSelections: $trackSelections")
+            }
+
+            override fun onStaticMetadataChanged(metadataList: MutableList<Metadata>) {
+                super.onStaticMetadataChanged(metadataList)
+                Logger.debug(TAG, "onStaticMetadataChanged() -> metadataList: $metadataList")
+            }
+
+            override fun onIsLoadingChanged(isLoading: Boolean) {
+                super.onIsLoadingChanged(isLoading)
+                Logger.debug(TAG, "onIsLoadingChanged() -> isLoading: $isLoading")
             }
 
             override fun onPlaybackStateChanged(state: Int) {
@@ -536,8 +550,62 @@ class CinemaDialogFragment private constructor(
                 }
             }
 
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                super.onPlayWhenReadyChanged(playWhenReady, reason)
+                Logger.debug(TAG, "onPlayWhenReadyChanged() -> playWhenReady: $playWhenReady, reason: $reason")
+            }
+
+            override fun onPlaybackSuppressionReasonChanged(playbackSuppressionReason: Int) {
+                super.onPlaybackSuppressionReasonChanged(playbackSuppressionReason)
+                Logger.debug(TAG, "onPlaybackSuppressionReasonChanged() -> playbackSuppressionReason: $playbackSuppressionReason")
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) {
+                    playOrPauseButton.setIconResource(R.drawable.exo_icon_pause)
+
+                    controllerViewAnimation = controllerView.animate()
+                        .setStartDelay(2500L)
+                        .withStartAction {
+                            controllerView.visibility = View.VISIBLE
+                        }
+                        .withEndAction {
+                            controllerView.visibility = View.INVISIBLE
+                        }
+                    controllerViewAnimation?.start()
+                } else {
+                    playOrPauseButton.setIconResource(R.drawable.exo_icon_play)
+                }
+            }
+
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                super.onRepeatModeChanged(repeatMode)
+                Logger.debug(TAG, "onRepeatModeChanged() -> repeatMode: $repeatMode")
+            }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                super.onShuffleModeEnabledChanged(shuffleModeEnabled)
+                Logger.debug(TAG, "onShuffleModeEnabledChanged() -> shuffleModeEnabled: $shuffleModeEnabled")
+            }
+
             override fun onPlayerError(error: ExoPlaybackException) {
+                super.onPlayerError(error)
                 error.printStackTrace()
+            }
+
+            override fun onPositionDiscontinuity(reason: Int) {
+                super.onPositionDiscontinuity(reason)
+                Logger.debug(TAG, "onPositionDiscontinuity() -> reason: $reason")
+            }
+
+            override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
+                super.onPlaybackParametersChanged(playbackParameters)
+                Logger.debug(TAG, "onPlaybackParametersChanged() -> playbackParameters: $playbackParameters")
+            }
+
+            override fun onEvents(player: Player, events: Player.Events) {
+                super.onEvents(player, events)
+                Logger.debug(TAG, "onEvents() -> events: $events")
             }
         }
     }
