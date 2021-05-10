@@ -429,7 +429,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         return settings.isEnabled()
     }
 
-    protected fun onTouchInternal(view: View, event: MotionEvent): Boolean {
+    protected open fun onTouchInternal(view: View, event: MotionEvent): Boolean {
         val viewportEvent: MotionEvent = MotionEvent.obtain(event)
         viewportEvent.offsetLocation(-view.paddingLeft.toFloat(), -view.paddingTop.toFloat())
         gestureDetector.setIsLongpressEnabled(view.isLongClickable)
@@ -487,7 +487,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         return result
     }
 
-    protected fun shouldDisallowInterceptTouch(event: MotionEvent): Boolean {
+    protected open fun shouldDisallowInterceptTouch(event: MotionEvent): Boolean {
         if (exitController.isExitDetected()) {
             return true
         }
@@ -516,14 +516,14 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         return false
     }
 
-    protected fun onDown(event: MotionEvent): Boolean {
+    protected open fun onDown(event: MotionEvent): Boolean {
         isInterceptTouchDisallowed = false
         stopFlingAnimation()
         gestureListener?.onDown(event)
         return false
     }
 
-    protected fun onUpOrCancel(event: MotionEvent) {
+    protected open fun onUpOrCancel(event: MotionEvent) {
         isScrollDetected = false
         isScaleDetected = false
         isRotationDetected = false
@@ -551,7 +551,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         }
     }
 
-    protected fun onScroll(e1: MotionEvent, e2: MotionEvent, dx: Float, dy: Float): Boolean {
+    protected open fun onScroll(e1: MotionEvent, e2: MotionEvent, dx: Float, dy: Float): Boolean {
         if (!settings.isPanEnabled() || isAnimatingState) {
             return false
         }
@@ -575,7 +575,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         return isScrollDetected
     }
 
-    protected fun onFling(e1: MotionEvent, e2: MotionEvent, vx: Float, vy: Float): Boolean {
+    protected open fun onFling(e1: MotionEvent, e2: MotionEvent, vx: Float, vy: Float): Boolean {
         if (!settings.isPanEnabled() || !settings.isFlingEnabled() || isAnimatingState) {
             return false
         }
@@ -616,7 +616,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
      * @return true if state was changed, false otherwise.
      */
     // Public API (can be overridden)
-    protected fun onFlingScroll(dx: Int, dy: Int): Boolean {
+    protected open fun onFlingScroll(dx: Int, dy: Int): Boolean {
         val prevX = state.getX()
         val prevY = state.getY()
         var toX = prevX + dx
@@ -631,7 +631,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
     }
 
     // Public API (can be overridden)
-    protected fun onSingleTapConfirmed(event: MotionEvent?): Boolean {
+    protected open fun onSingleTapConfirmed(event: MotionEvent?): Boolean {
         // If double tap is enabled we should propagate click only if we aren't in a double tap now
         if (settings.isDoubleTapEnabled()) {
             targetView.performClick()
@@ -639,7 +639,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         return gestureListener?.onSingleTapConfirmed(event) == true
     }
 
-    protected fun onDoubleTapEvent(event: MotionEvent): Boolean {
+    protected open fun onDoubleTapEvent(event: MotionEvent): Boolean {
         if (!settings.isDoubleTapEnabled()) {
             return false
         }
@@ -661,7 +661,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         return true
     }
 
-    protected fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+    protected open fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
         isScaleDetected = settings.isZoomEnabled()
         if (isScaleDetected) {
             exitController.onScaleBegin()
@@ -670,7 +670,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
     }
 
     // Public API (can be overridden)
-    protected fun onScale(detector: ScaleGestureDetector): Boolean {
+    protected open fun onScale(detector: ScaleGestureDetector): Boolean {
         if (!settings.isZoomEnabled() || isAnimatingState) {
             return false // Ignoring scroll if animation is in progress
         }
@@ -687,7 +687,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
     }
 
     // Public API (can be overridden)
-    protected fun onScaleEnd(detector: ScaleGestureDetector?) {
+    protected open fun onScaleEnd(detector: ScaleGestureDetector) {
         if (isScaleDetected) {
             exitController.onScaleEnd()
         }
@@ -695,7 +695,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         isRestrictZoomRequested = true
     }
 
-    protected fun onRotationBegin(detector: RotationGestureDetector?): Boolean {
+    protected open fun onRotationBegin(detector: RotationGestureDetector): Boolean {
         isRotationDetected = settings.isRotationEnabled()
         if (isRotationDetected) {
             exitController.onRotationBegin()
@@ -704,7 +704,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
     }
 
     // Public API (can be overridden)
-    protected fun onRotate(detector: RotationGestureDetector): Boolean {
+    protected open fun onRotate(detector: RotationGestureDetector): Boolean {
         if (!settings.isRotationEnabled() || isAnimatingState) {
             return false
         }
@@ -720,7 +720,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
     }
 
     // Public API (can be overridden)
-    protected fun onRotationEnd(detector: RotationGestureDetector?) {
+    protected open fun onRotationEnd(detector: RotationGestureDetector) {
         if (isRotationDetected) {
             exitController.onRotationEnd()
         }
