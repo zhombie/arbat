@@ -1,5 +1,6 @@
 package kz.zhombie.kaleidoscope
 
+import android.annotation.SuppressLint
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
@@ -89,7 +90,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
     private var isRestrictRotationRequested = false
     private var isAnimatingInBounds = false
 
-    private var stateSource = StateSource.NONE
+    private var stateSource = NONE
 
     private val flingScroller: OverScroller
     private val stateScroller: FloatScroller
@@ -119,7 +120,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         scaleDetector = ScaleGestureDetectorFixed(context, internalListener)
         rotateDetector = RotationGestureDetector(context, internalListener)
 
-        exitController = ExitController(view, this)
+        exitController = ExitController(view = view, controller = this)
 
         flingScroller = OverScroller(context)
         stateScroller = FloatScroller()
@@ -397,7 +398,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
     }
 
     private fun notifyStateSourceChanged() {
-        var type = StateSource.NONE
+        var type = NONE
         if (isAnimating) {
             type = StateSource.ANIMATION
         } else if (isScrollDetected || isScaleDetected || isRotationDetected) {
@@ -417,10 +418,12 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         return onTouchInternal(view, event)
     }
 
-    // performClick is called in gestures callbacks
+    @SuppressLint("ClickableViewAccessibility")  // performClick is called in gestures callbacks
     override fun onTouch(view: View?, event: MotionEvent?): Boolean {
         if (!isInterceptTouchCalled) { // Preventing duplicate events
-            onTouchInternal(view, event)
+            if (view != null && event != null) {
+                onTouchInternal(view, event)
+            }
         }
         isInterceptTouchCalled = false
         return settings.isEnabled()
@@ -583,10 +586,10 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
         stopFlingAnimation()
 
         // Fling bounds including current position
-        flingBounds.set(state).extend(state.x, state.y)
+        flingBounds.set(state).extend(state.getX(), state.getY())
         flingScroller.fling(
-            Math.round(state.x),
-            Math.round(state.y),
+            state.getX().roundToInt(),
+            state.getY().roundToInt(),
             limitFlingVelocity(vx * FLING_COEFFICIENT),
             limitFlingVelocity(vy * FLING_COEFFICIENT),
             Int.MIN_VALUE,
@@ -825,7 +828,7 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
          * @return true if event was consumed, false otherwise.
          * @see GestureDetector.OnDoubleTapListener.onSingleTapConfirmed
          */
-        fun onSingleTapConfirmed(event: MotionEvent): Boolean
+        fun onSingleTapConfirmed(event: MotionEvent?): Boolean
 
         /**
          * Note, that long press is disabled by default, use [View.setLongClickable]
@@ -849,44 +852,26 @@ open class GestureController constructor(view: View) : View.OnTouchListener {
      */
     // Public API
     class SimpleOnGestureListener : OnGestureListener {
-        /**
-         * {@inheritDoc}
-         */
         override fun onDown(event: MotionEvent) {
             // no-op
         }
 
-        /**
-         * {@inheritDoc}
-         */
         override fun onUpOrCancel(event: MotionEvent) {
             // no-op
         }
 
-        /**
-         * {@inheritDoc}
-         */
         override fun onSingleTapUp(event: MotionEvent): Boolean {
             return false
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        override fun onSingleTapConfirmed(event: MotionEvent): Boolean {
+        override fun onSingleTapConfirmed(event: MotionEvent?): Boolean {
             return false
         }
 
-        /**
-         * {@inheritDoc}
-         */
         override fun onLongPress(event: MotionEvent) {
             // no-op
         }
 
-        /**
-         * {@inheritDoc}
-         */
         override fun onDoubleTap(event: MotionEvent): Boolean {
             return false
         }

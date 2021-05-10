@@ -1,5 +1,6 @@
 package kz.zhombie.kaleidoscope.views
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -22,6 +23,7 @@ import kz.zhombie.kaleidoscope.views.interfaces.AnimatorView
 import kz.zhombie.kaleidoscope.views.interfaces.ClipBounds
 import kz.zhombie.kaleidoscope.views.interfaces.ClipView
 import kz.zhombie.kaleidoscope.views.interfaces.GestureView
+import kotlin.math.min
 
 /**
  * [ImageView] implementation controlled by [GestureController] ([getController]).
@@ -42,8 +44,8 @@ class GestureImageView @JvmOverloads constructor(
 
     init {
         ensureControllerCreated()
-        controller.getSettings().init(context, attrs)
-        controller.addOnStateChangeListener(object : GestureController.OnStateChangeListener {
+        controller?.getSettings()?.init(context, attrs)
+        controller?.addOnStateChangeListener(object : GestureController.OnStateChangeListener {
             override fun onStateChanged(state: State) {
                 applyState(state)
             }
@@ -85,9 +87,6 @@ class GestureImageView @JvmOverloads constructor(
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     override fun getController(): GestureControllerForPager {
         return controller
     }
@@ -114,18 +113,18 @@ class GestureImageView @JvmOverloads constructor(
         return CropUtils.crop(drawable, controller)
     }
 
-    // performClick() will be called by controller
+    @SuppressLint("ClickableViewAccessibility")  // performClick() will be called by controller
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return controller?.onTouch(this, event)
+        return controller?.onTouch(this, event) == true
     }
 
     override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
         super.onSizeChanged(width, height, oldWidth, oldHeight)
-        controller.getSettings().setViewport(
+        controller?.getSettings()?.setViewport(
             width - paddingLeft - paddingRight,
             height - paddingTop - paddingBottom
         )
-        controller.resetState()
+        controller?.resetState()
     }
 
     override fun setImageResource(resId: Int) {
@@ -141,8 +140,8 @@ class GestureImageView @JvmOverloads constructor(
         val settings: Settings = controller.getSettings()
 
         // Saving old image size
-        val oldWidth: Float = settings.getImageW()
-        val oldHeight: Float = settings.getImageH()
+        val oldWidth: Float = settings.getImageWidth().toFloat()
+        val oldHeight: Float = settings.getImageHeight().toFloat()
 
         // Setting image size
         if (drawable == null) {
@@ -154,10 +153,10 @@ class GestureImageView @JvmOverloads constructor(
         }
 
         // Getting new image size
-        val newWidth: Float = settings.getImageW()
-        val newHeight: Float = settings.getImageH()
+        val newWidth: Float = settings.getImageWidth().toFloat()
+        val newHeight: Float = settings.getImageHeight().toFloat()
         if (newWidth > 0f && newHeight > 0f && oldWidth > 0f && oldHeight > 0f) {
-            val scaleFactor = Math.min(oldWidth / newWidth, oldHeight / newHeight)
+            val scaleFactor = min(oldWidth / newWidth, oldHeight / newHeight)
             controller.getStateController().setTempZoomPatch(scaleFactor)
             controller.updateState()
             controller.getStateController().setTempZoomPatch(0f)
@@ -167,7 +166,7 @@ class GestureImageView @JvmOverloads constructor(
     }
 
     protected fun applyState(state: State) {
-        state[imageMatrix]
+        state.get(imageMatrix)
         setImageMatrix(imageMatrix)
     }
 

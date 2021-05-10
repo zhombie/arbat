@@ -387,6 +387,39 @@ class ViewPositionAnimator constructor(to: GestureView) {
     }
 
     /**
+     * @return Target (to) position as set by [setToState].
+     * Maybe useful to determine real animation position during exit gesture.
+     *
+     *
+     * I.e. [getPosition] / [getToPosition] (changes from 0 to ∞)
+     * represents interpolated position used to calculate intermediate state and bounds.
+     */
+    // We really need this method to point to itself
+    fun getToPosition(): Float {
+        return toPosition
+    }
+
+    /**
+     * @return Current position within range `[0, 1]`, where `0` is for
+     * initial (from) position and `1` is for final (to) position.
+     *
+     * Note, that final position can be changed by [.setToState], so if you
+     * need to have real value of final position (instead of `1`) then you need to use
+     * [getToPosition] method.
+     */
+    fun getPosition(): Float {
+        return position
+    }
+
+    /**
+     * @return Whether animator is in leaving state. Means that animation direction is
+     * from final (to) position back to initial (from) position.
+     */
+    fun isLeaving(): Boolean {
+        return isLeaving
+    }
+
+    /**
      * Specifies target ([to]) state and it's position which will be used to interpolate
      * current state for intermediate positions (i.e. during animation or exit gesture).
      * This allows you to set up correct state without changing current position
@@ -519,6 +552,13 @@ class ViewPositionAnimator constructor(to: GestureView) {
             isApplyingPositionScheduled = false
             applyCurrentPosition()
         }
+    }
+
+    /**
+     * @return Whether view position animation is in progress or not.
+     */
+    fun isAnimating(): Boolean {
+        return isAnimating
     }
 
     /**

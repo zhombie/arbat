@@ -55,7 +55,7 @@ class StateController internal constructor(private val settings: Settings) {
     fun updateState(state: State): Boolean {
         return if (isResetRequired) {
             // Applying initial state
-            state[0f, 0f, zoomBounds.set(state).getFitZoom()] = 0f
+            state.set(0f, 0f, zoomBounds.set(state).getFitZoom(), 0f)
             GravityUtils.getImagePosition(state, settings, tmpRect)
             state.translateTo(tmpRect.left.toFloat(), tmpRect.top.toFloat())
 
@@ -85,7 +85,7 @@ class StateController internal constructor(private val settings: Settings) {
 
     fun applyZoomPatch(state: State) {
         if (zoomPatch > 0f) {
-            state[state.getX(), state.getY(), state.getZoom() * zoomPatch] = state.getRotation()
+            state.set(state.getX(), state.getY(), state.getZoom() * zoomPatch, state.getRotation())
         }
     }
 
