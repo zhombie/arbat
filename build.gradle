@@ -17,7 +17,7 @@ buildscript {
  * Shared configs across subprojects
  */
 ext.projectArtifactId = { project ->
-    if (project.name == 'cinema' || project.name == 'museum' || project.name == 'radio') {
+    if (project.name == 'kaleidoscope' || project.name == 'cinema' || project.name == 'museum' || project.name == 'radio') {
         return project.name
     } else {
         return null
