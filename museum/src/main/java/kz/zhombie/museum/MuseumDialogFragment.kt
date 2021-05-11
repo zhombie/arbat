@@ -4,7 +4,7 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.os.Looper
 import android.view.View
-import android.view.ViewTreeObserver.*
+import android.widget.ImageView
 import androidx.core.os.HandlerCompat
 import androidx.fragment.app.FragmentManager
 import androidx.viewpager.widget.ViewPager
@@ -39,7 +39,7 @@ class MuseumDialogFragment private constructor(
 
     class Builder {
         private var paintingLoader: PaintingLoader? = null
-        private var canvasView: View? = null
+        private var canvasView: ImageView? = null
         private var paintings: List<Painting>? = null
         private var isFooterViewEnabled: Boolean = false
         private var callback: Callback? = null
@@ -49,7 +49,7 @@ class MuseumDialogFragment private constructor(
             return this
         }
 
-        fun setCanvasView(canvasView: View): Builder {
+        fun setCanvasView(canvasView: ImageView): Builder {
             this.canvasView = canvasView
             return this
         }
@@ -78,13 +78,13 @@ class MuseumDialogFragment private constructor(
                     isFooterViewEnabled = isFooterViewEnabled
                 )
             ).apply {
-                this@Builder.canvasView?.let { setCanvasView(it) }
+                setCanvasView(this@Builder.canvasView)
 
                 if (!Settings.hasPaintingLoader()) {
                     Settings.setPaintingLoader(requireNotNull(paintingLoader) { PaintingLoaderNullException() })
                 }
 
-                this@Builder.callback?.let { setCallback(it) }
+                setCallback(this@Builder.callback)
             }
         }
 
@@ -102,16 +102,16 @@ class MuseumDialogFragment private constructor(
 
     private var viewsTransitionAnimator: ViewsTransitionAnimator<Int>? = null
 
-    private var callback: Callback? = null
-
-    fun setCallback(callback: Callback) {
-        this.callback = callback
-    }
+    private var canvasView: ImageView? = null
+    private var params: Params? = null
 
     private var isPictureShowCalled: Boolean = false
 
-    private var canvasView: View? = null
-    private var params: Params? = null
+    private var callback: Callback? = null
+
+    private fun setCallback(callback: Callback?) {
+        this.callback = callback
+    }
 
     override fun getTheme(): Int = R.style.Museum_Dialog_Fullscreen
 
@@ -169,7 +169,7 @@ class MuseumDialogFragment private constructor(
             }
 
             if (canvasView == null) {
-                viewsTransitionAnimator?.enterSingle(true)
+                viewsTransitionAnimator?.enter(0, false)
             } else {
                 viewsTransitionAnimator?.enter(0, true)
             }
@@ -187,7 +187,11 @@ class MuseumDialogFragment private constructor(
         Logger.debug(TAG, "dismiss() -> ${viewsTransitionAnimator?.isLeaving}")
 
         if (viewsTransitionAnimator?.isLeaving == false) {
-            viewsTransitionAnimator?.exit(true)
+            if (canvasView == null) {
+                viewsTransitionAnimator?.exit(false)
+            } else {
+                viewsTransitionAnimator?.exit(true)
+            }
         } else {
             super.dismiss()
         }
@@ -199,13 +203,21 @@ class MuseumDialogFragment private constructor(
         Logger.debug(TAG, "onDestroy()")
 
         if (!isPictureShowCalled) {
-            callback?.onImageShow(0L)
             isPictureShowCalled = true
+
+            HandlerCompat.createAsync(Looper.getMainLooper())
+                .postDelayed({ canvasView?.visibility = View.VISIBLE }, 25L)
         }
+
+        callback = null
+
+        viewsTransitionAnimator = null
+
+        viewPagerAdapter = null
 
         canvasView = null
 
-        callback = null
+        params = null
     }
 
     private fun setupToolbar() {
@@ -248,12 +260,14 @@ class MuseumDialogFragment private constructor(
             Logger.debug(TAG, "isFinished")
 
             if (!isPictureShowCalled) {
-                callback?.onImageShow(0L)
                 isPictureShowCalled = true
+
+                HandlerCompat.createAsync(Looper.getMainLooper())
+                    .postDelayed({ canvasView?.visibility = View.VISIBLE }, 0L)
             }
 
             HandlerCompat.createAsync(Looper.getMainLooper())
-                .postDelayed({ dismiss() }, 15L)
+                .postDelayed({ dismiss() }, 25L)
         }
     }
 
@@ -316,14 +330,12 @@ class MuseumDialogFragment private constructor(
      * [MuseumDialogFragmentListener] implementation
      */
 
-    override fun setCanvasView(view: View): MuseumDialogFragment {
-        this.canvasView = view
+    override fun setCanvasView(imageView: ImageView?): MuseumDialogFragment {
+        this.canvasView = imageView
         return this
     }
 
     interface Callback {
-        fun onImageShow(delay: Long = 0L)
-        fun onImageHide(delay: Long = 0L)
     }
 
 }

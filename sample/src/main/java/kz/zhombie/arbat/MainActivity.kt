@@ -96,35 +96,26 @@ class MainActivity : AppCompatActivity() {
 
         imageView?.let { imageView ->
             imageLoader?.loadSmallImage(this, imageView, Uri.parse(images.first()))
-        }
 
-        imageView?.setOnClickListener { view ->
-            dialogFragment?.dismiss()
-            dialogFragment = null
-            dialogFragment = MuseumDialogFragment.Builder()
-                .setPaintingLoader(requireNotNull(imageLoader))
-                .setCanvasView(view)
-                .setPaintings(
-                    images.mapIndexed { index, s ->
-                        Painting(
-                            uri = Uri.parse(s),
-                            info = Painting.Info("Title: $index", "Subtitle: $index")
-                        )
-                    }
-                )
-                .setFooterViewEnabled(true)
-                .setCallback(object : MuseumDialogFragment.Callback {
-                    override fun onImageShow(delay: Long) {
-                        HandlerCompat.createAsync(Looper.getMainLooper())
-                            .postDelayed({ view.visibility = View.VISIBLE }, delay)
-                    }
-
-                    override fun onImageHide(delay: Long) {
-                        HandlerCompat.createAsync(Looper.getMainLooper())
-                            .postDelayed({ view.visibility = View.INVISIBLE }, delay)
-                    }
-                })
-                .show(supportFragmentManager)
+            imageView.setOnClickListener {
+                dialogFragment?.dismiss()
+                dialogFragment = null
+                dialogFragment = MuseumDialogFragment.Builder()
+                    .setPaintingLoader(requireNotNull(imageLoader))
+                    .setCanvasView(imageView)
+                    .setPaintings(
+                        images.mapIndexed { index, s ->
+                            Painting(
+                                uri = Uri.parse(s),
+                                info = Painting.Info("Title: $index", "Subtitle: $index")
+                            )
+                        }
+                    )
+                    .setFooterViewEnabled(true)
+                    .setCallback(object : MuseumDialogFragment.Callback {
+                    })
+                    .show(supportFragmentManager)
+            }
         }
     }
 

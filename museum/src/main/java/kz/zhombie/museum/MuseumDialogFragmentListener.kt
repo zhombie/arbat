@@ -1,9 +1,7 @@
 package kz.zhombie.museum
 
-import android.view.View
-import com.alexvasilkov.gestures.animation.ViewPosition
-import kz.zhombie.museum.MuseumDialogFragment
+import android.widget.ImageView
 
 interface MuseumDialogFragmentListener {
-    fun setCanvasView(view: View): MuseumDialogFragment
+    fun setCanvasView(imageView: ImageView?): MuseumDialogFragment
 }
