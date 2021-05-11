@@ -1,20 +1,23 @@
 package kz.zhombie.museum
 
 import android.content.DialogInterface
-import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
+import android.os.Looper
 import android.view.View
 import android.view.ViewTreeObserver.*
-import android.widget.LinearLayout
+import androidx.core.os.HandlerCompat
 import androidx.fragment.app.FragmentManager
-import com.alexvasilkov.gestures.Settings
-import com.alexvasilkov.gestures.animation.ViewPosition
-import com.alexvasilkov.gestures.views.GestureImageView
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.textview.MaterialTextView
+import androidx.viewpager.widget.ViewPager
+import androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener
+import com.alexvasilkov.gestures.commons.DepthPageTransformer
+import com.alexvasilkov.gestures.transition.GestureTransitions
+import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator
+import com.alexvasilkov.gestures.transition.tracker.SimpleTracker
+import kz.zhombie.museum.adapter.ViewPagerAdapter
 import kz.zhombie.museum.base.BaseDialogFragment
+import kz.zhombie.museum.exception.PaintingLoaderNullException
 import kz.zhombie.museum.logging.Logger
+import kz.zhombie.museum.model.Painting
 
 class MuseumDialogFragment private constructor(
 ) : BaseDialogFragment(R.layout.museum_fragment_dialog), MuseumDialogFragmentListener {
@@ -22,75 +25,37 @@ class MuseumDialogFragment private constructor(
     companion object {
         private val TAG: String = MuseumDialogFragment::class.java.simpleName
 
-        fun init(artworkLoader: ArtworkLoader, isLoggingEnabled: Boolean) {
-            kz.zhombie.museum.Settings.setArtworkLoader(artworkLoader)
-            kz.zhombie.museum.Settings.setLoggingEnabled(isLoggingEnabled)
+        fun init(paintingLoader: PaintingLoader, isLoggingEnabled: Boolean) {
+            Settings.setPaintingLoader(paintingLoader)
+            Settings.setLoggingEnabled(isLoggingEnabled)
         }
 
-        private fun newInstance(
-            uri: Uri,
-            title: String? = null,
-            subtitle: String? = null,
-            startViewPosition: ViewPosition? = null,
-            isFooterViewEnabled: Boolean
-        ): MuseumDialogFragment {
+        private fun newInstance(params: Params): MuseumDialogFragment {
             val fragment = MuseumDialogFragment()
-            fragment.arguments = Bundle().apply {
-                putString(BundleKey.URI, uri.toString())
-
-                putString(BundleKey.TITLE, title)
-
-                if (!subtitle.isNullOrBlank()) {
-                    putString(BundleKey.SUBTITLE, subtitle)
-                }
-
-                if (startViewPosition != null) {
-                    putString(BundleKey.START_VIEW_POSITION, startViewPosition.pack())
-                }
-
-                putBoolean(BundleKey.IS_FOOTER_VIEW_ENABLED, isFooterViewEnabled)
-            }
+            fragment.arguments = BundleManager.build(params)
             return fragment
         }
     }
 
     class Builder {
-        private var artworkLoader: ArtworkLoader? = null
-        private var artworkView: View? = null
-        private var uri: Uri? = null
-        private var title: String? = null
-        private var subtitle: String? = null
-        private var startViewPosition: ViewPosition? = null
+        private var paintingLoader: PaintingLoader? = null
+        private var canvasView: View? = null
+        private var paintings: List<Painting>? = null
         private var isFooterViewEnabled: Boolean = false
         private var callback: Callback? = null
 
-        fun setArtworkLoader(artworkLoader: ArtworkLoader): Builder {
-            this.artworkLoader = artworkLoader
+        fun setPaintingLoader(paintingLoader: PaintingLoader): Builder {
+            this.paintingLoader = paintingLoader
             return this
         }
 
-        fun setArtworkView(artworkView: View): Builder {
-            this.artworkView = artworkView
+        fun setCanvasView(canvasView: View): Builder {
+            this.canvasView = canvasView
             return this
         }
 
-        fun setUri(uri: Uri): Builder {
-            this.uri = uri
-            return this
-        }
-
-        fun setTitle(title: String): Builder {
-            this.title = title
-            return this
-        }
-
-        fun setSubtitle(subtitle: String?): Builder {
-            this.subtitle = subtitle
-            return this
-        }
-
-        fun setStartViewPosition(view: View): Builder {
-            this.startViewPosition = ViewPosition.from(view)
+        fun setPaintings(paintings: List<Painting>): Builder {
+            this.paintings = paintings
             return this
         }
 
@@ -105,20 +70,19 @@ class MuseumDialogFragment private constructor(
         }
 
         fun build(): MuseumDialogFragment {
+            val paintings = paintings
+            if (paintings.isNullOrEmpty()) throw IllegalStateException("Museum paintings is mandatory value")
             return newInstance(
-                uri = requireNotNull(uri) { "Museum artwork uri is mandatory value" },
-                title = title,
-                subtitle = subtitle,
-                startViewPosition = startViewPosition,
-                isFooterViewEnabled = isFooterViewEnabled
-            ).apply {
-                this@Builder.artworkView?.let { setArtworkView(it) }
-
-                setArtworkLoader(
-                    requireNotNull(
-                        this@Builder.artworkLoader ?: kz.zhombie.museum.Settings.getArtworkLoader()
-                    ) { "Museum artwork must be loaded somehow" }
+                Params(
+                    paintings = paintings,
+                    isFooterViewEnabled = isFooterViewEnabled
                 )
+            ).apply {
+                this@Builder.canvasView?.let { setCanvasView(it) }
+
+                if (!Settings.hasPaintingLoader()) {
+                    Settings.setPaintingLoader(requireNotNull(paintingLoader) { PaintingLoaderNullException() })
+                }
 
                 this@Builder.callback?.let { setCallback(it) }
             }
@@ -126,39 +90,19 @@ class MuseumDialogFragment private constructor(
 
         fun show(fragmentManager: FragmentManager): MuseumDialogFragment {
             val fragment = build()
-//            val transaction = fragmentManager.beginTransaction()
-//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-//            transaction
-//                .add(android.R.id.content, fragment)
-//                .commit()
             fragment.isCancelable = true
             fragment.show(fragmentManager, null)
             return fragment
         }
     }
 
-    private object BundleKey {
-        const val URI = "uri"
-        const val TITLE = "title"
-        const val SUBTITLE = "subtitle"
-        const val START_VIEW_POSITION = "start_view_position"
-        const val IS_FOOTER_VIEW_ENABLED = "is_footer_view_enabled"
-    }
+    private var viewHolder: ViewHolder? = null
 
-    private lateinit var toolbar: MaterialToolbar
-    private lateinit var backgroundView: View
-    private lateinit var gestureImageView: GestureImageView
-    private lateinit var footerView: LinearLayout
-    private lateinit var titleView: MaterialTextView
-    private lateinit var subtitleView: MaterialTextView
+    private var viewPagerAdapter: ViewPagerAdapter? = null
 
-    private var artworkLoader: ArtworkLoader? = null
+    private var viewsTransitionAnimator: ViewsTransitionAnimator<Int>? = null
 
     private var callback: Callback? = null
-
-    fun setArtworkLoader(artworkLoader: ArtworkLoader) {
-        this.artworkLoader = artworkLoader
-    }
 
     fun setCallback(callback: Callback) {
         this.callback = callback
@@ -166,142 +110,69 @@ class MuseumDialogFragment private constructor(
 
     private var isPictureShowCalled: Boolean = false
 
-    private var isOverlayViewVisible: Boolean = true
+    private var canvasView: View? = null
+    private var params: Params? = null
 
-    private var artworkView: View? = null
-        set(value) {
-            field = value
-
-            if (value != null) {
-                if (onGlobalLayoutListener == null) {
-                    onGlobalLayoutListener = OnGlobalLayoutListener {
-                        onTrackViewPosition(value)
-                    }
-
-                    if (value.viewTreeObserver.isAlive) {
-                        value.viewTreeObserver.addOnGlobalLayoutListener(onGlobalLayoutListener)
-                    }
-                }
-            }
-        }
-
-    private var onGlobalLayoutListener: OnGlobalLayoutListener? = null
-
-    private lateinit var uri: Uri
-    private var title: String? = null
-    private var subtitle: String? = null
-    private var startViewPosition: ViewPosition? = null
-    private var isFooterViewEnabled: Boolean = false
-
-    override fun getTheme(): Int {
-        return R.style.Museum_Dialog_Fullscreen
-    }
+    override fun getTheme(): Int = R.style.Museum_Dialog_Fullscreen
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setStyle(STYLE_NORMAL, theme)
-
-        val arguments = arguments
-        require(arguments != null) { "Provide arguments!" }
-
-        uri = Uri.parse(requireNotNull(arguments.getString(BundleKey.URI)))
-        title = arguments.getString(BundleKey.TITLE)
-        subtitle = arguments.getString(BundleKey.SUBTITLE)
-
-        val startViewPosition = arguments.getString(BundleKey.START_VIEW_POSITION)
-        if (!startViewPosition.isNullOrBlank()) {
-            this.startViewPosition = ViewPosition.unpack(startViewPosition)
-        }
-
-        isFooterViewEnabled = arguments.getBoolean(BundleKey.IS_FOOTER_VIEW_ENABLED)
+        params = BundleManager.get(arguments)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        toolbar = view.findViewById(R.id.toolbar)
-        backgroundView = view.findViewById(R.id.backgroundView)
-        gestureImageView = view.findViewById(R.id.gestureImageView)
-        footerView = view.findViewById(R.id.footerView)
-        titleView = view.findViewById(R.id.titleView)
-        subtitleView = view.findViewById(R.id.subtitleView)
+        viewHolder = ViewHolder(view).also { viewHolder ->
+            setupToolbar()
+            setupGestureImageView()
+            setupFooterView()
 
-        setupToolbar()
-        setupGestureImageView()
-        setupInfo()
-        setupFooterView()
-
-        artworkLoader?.loadFullscreenImage(requireContext(), gestureImageView, uri)
-
-        gestureImageView.positionAnimator.addPositionUpdateListener { position, isLeaving ->
-            val isFinished = position == 0F && isLeaving
-
-            toolbar.alpha = position
-            backgroundView.alpha = position
-
-            if (isFooterViewEnabled) {
-                footerView.alpha = position
-            }
-
-            if (isFinished) {
-                toolbar.visibility = View.INVISIBLE
-                backgroundView.visibility = View.INVISIBLE
-
-                if (isFooterViewEnabled) {
-                    footerView.visibility = View.INVISIBLE
-                }
-            } else {
-                toolbar.visibility = View.VISIBLE
-                backgroundView.visibility = View.VISIBLE
-
-                if (isFooterViewEnabled) {
-                    footerView.visibility = View.VISIBLE
+            val viewPagerListener = object : SimpleOnPageChangeListener() {
+                override fun onPageSelected(position: Int) {
+                    val painting = viewPagerAdapter?.getItem(position)
+                    setPaintingInfo(painting)
                 }
             }
 
-            gestureImageView.visibility = if (isFinished) {
-                View.INVISIBLE
-            } else {
-                View.VISIBLE
-            }
+            viewPagerAdapter = ViewPagerAdapter(viewHolder.viewPager, Settings.getPaintingLoader())
+            viewPagerAdapter?.paintings = params?.paintings ?: emptyList()
+            viewHolder.viewPager.addOnPageChangeListener(viewPagerListener)
+            viewHolder.viewPager.setPageTransformer(true, DepthPageTransformer())
+            viewHolder.viewPager.adapter = viewPagerAdapter
 
-            if (isFinished) {
-                Logger.debug(TAG, "isFinished")
-
-                if (!isPictureShowCalled) {
-                    callback?.onPictureShow(0L)
-                    isPictureShowCalled = true
+            val viewPagerTracker: SimpleTracker = object : SimpleTracker() {
+                override fun getViewAt(position: Int): View? {
+                    val holder = viewPagerAdapter?.getViewHolder(position)
+                    return if (holder == null) null else ViewPagerAdapter.getImage(holder)
                 }
-
-                gestureImageView.controller.settings.disableBounds()
-                gestureImageView.positionAnimator.setState(0F, false, false)
-
-                gestureImageView.postDelayed({ super.dismiss() }, 17L)
             }
+
+            viewsTransitionAnimator = canvasView?.let { canvasView ->
+                // Setting up and animating image transition
+                GestureTransitions.from<Int>(canvasView)
+                    .into(viewHolder.viewPager, viewPagerTracker)
+            }
+
+            if (viewsTransitionAnimator == null) {
+                viewsTransitionAnimator = GestureTransitions.fromNone<Int>()
+                    .into(viewHolder.viewPager, viewPagerTracker)
+            }
+
+            viewsTransitionAnimator?.addPositionUpdateListener(::applyFullViewPagerState)
         }
 
         if (savedInstanceState == null) {
-            val startViewPosition = startViewPosition
-            if (startViewPosition == null) {
-                val artworkView = artworkView
-                if (artworkView == null) {
-                    gestureImageView.positionAnimator.enter(true)
-                } else {
-                    gestureImageView.positionAnimator.enter(artworkView, true)
-                }
-            } else {
-                gestureImageView.positionAnimator.enter(startViewPosition, true)
+            if (!params?.paintings.isNullOrEmpty()) {
+                setPaintingInfo(params?.paintings?.first())
             }
 
-            gestureImageView.viewTreeObserver.addOnPreDrawListener(object : OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    gestureImageView.viewTreeObserver.removeOnPreDrawListener(this)
-                    callback?.onPictureHide(17L)
-                    return true
-                }
-            })
-            gestureImageView.invalidate()
+            if (canvasView == null) {
+                viewsTransitionAnimator?.enterSingle(true)
+            } else {
+                viewsTransitionAnimator?.enter(0, true)
+            }
         }
     }
 
@@ -313,12 +184,12 @@ class MuseumDialogFragment private constructor(
 
     override fun dismiss() {
         Logger.debug(TAG, "dismiss()")
+        Logger.debug(TAG, "dismiss() -> ${viewsTransitionAnimator?.isLeaving}")
 
-        if (this::gestureImageView.isInitialized) {
-            Logger.debug(TAG, "dismiss() -> isLeaving: ${gestureImageView.positionAnimator.isLeaving}")
-            if (!gestureImageView.positionAnimator.isLeaving) {
-                gestureImageView.positionAnimator.exit(true)
-            }
+        if (viewsTransitionAnimator?.isLeaving == false) {
+            viewsTransitionAnimator?.exit(true)
+        } else {
+            super.dismiss()
         }
     }
 
@@ -328,105 +199,116 @@ class MuseumDialogFragment private constructor(
         Logger.debug(TAG, "onDestroy()")
 
         if (!isPictureShowCalled) {
-            callback?.onPictureShow(0L)
+            callback?.onImageShow(0L)
             isPictureShowCalled = true
         }
 
-        if (artworkView?.viewTreeObserver?.isAlive == true) {
-            artworkView?.viewTreeObserver?.removeOnGlobalLayoutListener(onGlobalLayoutListener)
-        }
-
-        onGlobalLayoutListener = null
-        artworkView = null
+        canvasView = null
 
         callback = null
     }
 
     private fun setupToolbar() {
-        toolbar.setNavigationOnClickListener { dismiss() }
+        viewHolder?.toolbar?.setNavigationOnClickListener { dismiss() }
+    }
+
+    private fun setPaintingInfo(painting: Painting?) {
+        if (painting == null) return
+
+        viewHolder?.titleView?.text = painting.info?.title
+
+        if (painting.info?.subtitle.isNullOrBlank()) {
+            viewHolder?.subtitleView?.text = null
+        } else {
+            viewHolder?.subtitleView?.text = painting.info?.subtitle
+        }
+    }
+
+    /**
+     * Applying [ViewPager] image animation state: fading out toolbar, title and background.
+     */
+    private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) {
+        Logger.debug(TAG, "applyFullPagerState() -> $position, $isLeaving")
+
+        val isFinished = position == 0F && isLeaving
+
+        viewHolder?.backgroundView?.visibility = if (position == 0F) View.INVISIBLE else View.VISIBLE
+        viewHolder?.backgroundView?.alpha = position
+
+        viewHolder?.toolbar?.visibility = if (position == 0F) View.INVISIBLE else View.VISIBLE
+        viewHolder?.toolbar?.alpha = if (isSystemUiShown()) position else 0F
+
+        viewHolder?.footerView?.visibility = if (position == 1F) View.VISIBLE else View.INVISIBLE
+
+        if (isLeaving && position == 0f) {
+            viewPagerAdapter?.setActivated(false)
+        }
+
+        if (isFinished) {
+            Logger.debug(TAG, "isFinished")
+
+            if (!isPictureShowCalled) {
+                callback?.onImageShow(0L)
+                isPictureShowCalled = true
+            }
+
+            HandlerCompat.createAsync(Looper.getMainLooper())
+                .postDelayed({ dismiss() }, 15L)
+        }
     }
 
     private fun setupGestureImageView() {
-        // Settings
-        gestureImageView.controller.settings
-            .setAnimationsDuration(225L)
-            .setBoundsType(Settings.Bounds.NORMAL)
-            .setDoubleTapEnabled(true)
-            .setExitEnabled(true)
-            .setExitType(Settings.ExitType.SCROLL)
-            .setFillViewport(true)
-            .setFitMethod(Settings.Fit.INSIDE)
-            .setFlingEnabled(true)
-            .setGravity(Gravity.CENTER)
-            .setMaxZoom(2.5F)
-            .setMinZoom(0F)
-            .setPanEnabled(true)
-            .setRotationEnabled(true)
-            .setRestrictRotation(true)
-            .setZoomEnabled(true)
-
         // Click actions
-        gestureImageView.setOnClickListener {
-            if (isOverlayViewVisible) {
-                toolbar.animate()
-                    .alpha(0.0F)
-                    .setDuration(100L)
-                    .withEndAction {
-                        toolbar.visibility = View.INVISIBLE
-                    }
-                    .start()
-
-                if (isFooterViewEnabled) {
-                    footerView.animate()
-                        .alpha(0.0F)
-                        .setDuration(100L)
-                        .withEndAction {
-                            footerView.visibility = View.INVISIBLE
-                        }
-                        .start()
-                }
-
-                isOverlayViewVisible = false
-            } else {
-                toolbar.animate()
-                    .alpha(1.0F)
-                    .setDuration(100L)
-                    .withStartAction {
-                        toolbar.visibility = View.VISIBLE
-                    }
-                    .start()
-
-                if (isFooterViewEnabled) {
-                    footerView.animate()
-                        .alpha(1.0F)
-                        .setDuration(100L)
-                        .withStartAction {
-                            footerView.visibility = View.VISIBLE
-                        }
-                        .start()
-                }
-
-                isOverlayViewVisible = true
-            }
-        }
-    }
-
-    private fun setupInfo() {
-        titleView.text = title
-
-        if (subtitle.isNullOrBlank()) {
-            subtitleView.visibility = View.GONE
-        } else {
-            subtitleView.text = subtitle
-            subtitleView.visibility = View.VISIBLE
-        }
+//        gestureImageView.setOnClickListener {
+//            if (isOverlayViewVisible) {
+//                toolbar.animate()
+//                    .alpha(0.0F)
+//                    .setDuration(100L)
+//                    .withEndAction {
+//                        toolbar.visibility = View.INVISIBLE
+//                    }
+//                    .start()
+//
+//                if (isFooterViewEnabled) {
+//                    footerView.animate()
+//                        .alpha(0.0F)
+//                        .setDuration(100L)
+//                        .withEndAction {
+//                            footerView.visibility = View.INVISIBLE
+//                        }
+//                        .start()
+//                }
+//
+//                isOverlayViewVisible = false
+//            } else {
+//                toolbar.animate()
+//                    .alpha(1.0F)
+//                    .setDuration(100L)
+//                    .withStartAction {
+//                        toolbar.visibility = View.VISIBLE
+//                    }
+//                    .start()
+//
+//                if (isFooterViewEnabled) {
+//                    footerView.animate()
+//                        .alpha(1.0F)
+//                        .setDuration(100L)
+//                        .withStartAction {
+//                            footerView.visibility = View.VISIBLE
+//                        }
+//                        .start()
+//                }
+//
+//                isOverlayViewVisible = true
+//            }
+//        }
     }
 
     private fun setupFooterView() {
-        if (isFooterViewEnabled) {
-            footerView.visibility = View.VISIBLE
+        if (params?.isFooterViewEnabled == true) {
+            viewHolder?.footerView?.visibility = View.VISIBLE
         } else {
-            footerView.visibility = View.GONE
+            viewHolder?.footerView?.visibility = View.GONE
         }
     }
 
@@ -434,26 +316,14 @@ class MuseumDialogFragment private constructor(
      * [MuseumDialogFragmentListener] implementation
      */
 
-    override fun onTrackViewPosition(view: View) {
-        onTrackViewPosition(ViewPosition.from(view))
-    }
-
-    override fun onTrackViewPosition(viewPosition: ViewPosition) {
-        if (this::gestureImageView.isInitialized) {
-            if (gestureImageView.positionAnimator.position > 0f) {
-                gestureImageView.positionAnimator.update(viewPosition)
-            }
-        }
-    }
-
-    override fun setArtworkView(view: View): MuseumDialogFragment {
-        this.artworkView = view
+    override fun setCanvasView(view: View): MuseumDialogFragment {
+        this.canvasView = view
         return this
     }
 
     interface Callback {
-        fun onPictureShow(delay: Long = 0L)
-        fun onPictureHide(delay: Long = 0L)
+        fun onImageShow(delay: Long = 0L)
+        fun onImageHide(delay: Long = 0L)
     }
 
 }

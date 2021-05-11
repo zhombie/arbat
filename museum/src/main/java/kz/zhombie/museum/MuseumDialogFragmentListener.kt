@@ -5,8 +5,5 @@ import com.alexvasilkov.gestures.animation.ViewPosition
 import kz.zhombie.museum.MuseumDialogFragment
 
 interface MuseumDialogFragmentListener {
-    fun onTrackViewPosition(view: View)
-    fun onTrackViewPosition(viewPosition: ViewPosition)
-
-    fun setArtworkView(view: View): MuseumDialogFragment
+    fun setCanvasView(view: View): MuseumDialogFragment
 }

@@ -15,6 +15,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
 import kz.zhombie.cinema.CinemaDialogFragment
 import kz.zhombie.museum.MuseumDialogFragment
+import kz.zhombie.museum.model.Painting
 import kz.zhombie.radio.Radio
 import kz.zhombie.radio.formatToDigitalClock
 import kz.zhombie.radio.getDisplayCurrentPosition
@@ -26,7 +27,11 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private val TAG = MainActivity::class.java.simpleName
 
-        private const val IMAGE_URL = "https://images.pexels.com/photos/2246476/pexels-photo-2246476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+        private const val IMAGE_1_URL = "https://images.pexels.com/photos/2246476/pexels-photo-2246476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+        private const val IMAGE_2_URL = "https://images.pexels.com/photos/6499137/pexels-photo-6499137.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+        private const val IMAGE_3_URL = "https://images.pexels.com/photos/586043/pexels-photo-586043.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+        private const val IMAGE_4_URL = "https://images.pexels.com/photos/1142950/pexels-photo-1142950.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+        private const val IMAGE_5_URL = "https://images.pexels.com/photos/1480523/pexels-photo-1480523.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
 
         private const val VIDEO_THUMBNAIL_URL = "https://i.ytimg.com/vi/2vgZTTLW81k/hqdefault.jpg?sqp=-oaymwEjCNACELwBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAR_mpN_wJtXsfcZpTvUgX5WLUdGQ"
         private const val VIDEO_URL = "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
@@ -87,30 +92,36 @@ class MainActivity : AppCompatActivity() {
     private fun setupMuseum() {
         MuseumDialogFragment.init(requireNotNull(imageLoader), true)
 
+        val images = listOf(IMAGE_1_URL, IMAGE_2_URL, IMAGE_3_URL, IMAGE_4_URL, IMAGE_5_URL)
+
         imageView?.let { imageView ->
-            imageLoader?.loadSmallImage(this, imageView, Uri.parse(IMAGE_URL))
+            imageLoader?.loadSmallImage(this, imageView, Uri.parse(images.first()))
         }
 
-        imageView?.setOnClickListener {
+        imageView?.setOnClickListener { view ->
             dialogFragment?.dismiss()
             dialogFragment = null
             dialogFragment = MuseumDialogFragment.Builder()
-                .setArtworkLoader(requireNotNull(imageLoader))
-                .setArtworkView(it)
-                .setUri(Uri.parse(IMAGE_URL))
-                .setTitle("Image")
-                .setSubtitle("Subtitle")
-                .setStartViewPosition(it)
+                .setPaintingLoader(requireNotNull(imageLoader))
+                .setCanvasView(view)
+                .setPaintings(
+                    images.mapIndexed { index, s ->
+                        Painting(
+                            uri = Uri.parse(s),
+                            info = Painting.Info("Title: $index", "Subtitle: $index")
+                        )
+                    }
+                )
                 .setFooterViewEnabled(true)
                 .setCallback(object : MuseumDialogFragment.Callback {
-                    override fun onPictureShow(delay: Long) {
+                    override fun onImageShow(delay: Long) {
                         HandlerCompat.createAsync(Looper.getMainLooper())
-                            .postDelayed({ it.visibility = View.VISIBLE }, delay)
+                            .postDelayed({ view.visibility = View.VISIBLE }, delay)
                     }
 
-                    override fun onPictureHide(delay: Long) {
+                    override fun onImageHide(delay: Long) {
                         HandlerCompat.createAsync(Looper.getMainLooper())
-                            .postDelayed({ it.visibility = View.INVISIBLE }, delay)
+                            .postDelayed({ view.visibility = View.INVISIBLE }, delay)
                     }
                 })
                 .show(supportFragmentManager)

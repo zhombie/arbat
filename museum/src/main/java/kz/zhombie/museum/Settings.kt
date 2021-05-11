@@ -1,20 +1,22 @@
 package kz.zhombie.museum
 
+import kz.zhombie.museum.exception.PaintingLoaderNullException
+
 internal object Settings {
 
-    private var artworkLoader: ArtworkLoader? = null
+    private var paintingLoader: PaintingLoader? = null
     private var isLoggingEnabled: Boolean = false
 
-    fun hasArtworkLoader(): Boolean {
-        return artworkLoader != null
+    fun hasPaintingLoader(): Boolean {
+        return paintingLoader != null
     }
 
-    fun getArtworkLoader(): ArtworkLoader {
-        return requireNotNull(artworkLoader) { ArtworkLoaderNullException() }
+    fun getPaintingLoader(): PaintingLoader {
+        return requireNotNull(paintingLoader) { PaintingLoaderNullException() }
     }
 
-    fun setArtworkLoader(artworkLoader: ArtworkLoader) {
-        this.artworkLoader = artworkLoader
+    fun setPaintingLoader(paintingLoader: PaintingLoader) {
+        this.paintingLoader = paintingLoader
     }
 
     fun isLoggingEnabled(): Boolean {

@@ -16,16 +16,17 @@ import coil.decode.VideoFrameDecoder
 import coil.fetch.VideoFrameFileFetcher
 import coil.fetch.VideoFrameUriFetcher
 import coil.request.CachePolicy
+import coil.request.Disposable
 import coil.request.ImageRequest
 import coil.request.ImageResult
 import coil.size.Precision
 import coil.size.Scale
 import coil.size.ViewSizeResolver
 import coil.util.DebugLogger
-import kz.zhombie.museum.ArtworkLoader
+import kz.zhombie.museum.PaintingLoader
 import kz.zhombie.museum.component.CircularProgressDrawable
 
-class CoilImageLoader constructor(context: Context) : ArtworkLoader {
+class CoilImageLoader constructor(context: Context) : PaintingLoader {
 
     companion object {
         private val TAG = CoilImageLoader::class.java.simpleName
@@ -56,6 +57,8 @@ class CoilImageLoader constructor(context: Context) : ArtworkLoader {
             .build()
     }
 
+    private val hashMap = hashMapOf<ImageView, Disposable>()
+
     private val circularProgressDrawable by lazy {
         val it = CircularProgressDrawable(context)
         it.setStyle(CircularProgressDrawable.LARGE)
@@ -68,6 +71,8 @@ class CoilImageLoader constructor(context: Context) : ArtworkLoader {
     }
 
     override fun loadSmallImage(context: Context, imageView: ImageView, uri: Uri) {
+        Log.d(TAG, "loadSmallImage() -> imageView: $imageView")
+
         val request = ImageRequest.Builder(context)
             .bitmapConfig(Bitmap.Config.ARGB_8888)
             .crossfade(false)
@@ -84,6 +89,8 @@ class CoilImageLoader constructor(context: Context) : ArtworkLoader {
     }
 
     override fun loadFullscreenImage(context: Context, imageView: ImageView, uri: Uri) {
+        Log.d(TAG, "loadFullscreenImage() -> imageView: $imageView")
+
         val request = ImageRequest.Builder(context)
             .bitmapConfig(Bitmap.Config.ARGB_8888)
             .crossfade(false)
@@ -122,12 +129,24 @@ class CoilImageLoader constructor(context: Context) : ArtworkLoader {
             .target(imageView)
             .build()
 
-        imageLoader.enqueue(request)
+        hashMap[imageView] = imageLoader.enqueue(request)
+    }
+
+    override fun dispose(imageView: ImageView) {
+        Log.d(TAG, "dispose() -> imageView: $imageView")
+
+        hashMap[imageView]?.dispose()
+        hashMap.remove(imageView)
+
+        imageView.setImageDrawable(null)
     }
 
     fun clearCache() {
+        Log.d(TAG, "clearCache()")
+
         circularProgressDrawable.stop()
         imageLoader.memoryCache.clear()
+        hashMap.clear()
     }
 
 }
