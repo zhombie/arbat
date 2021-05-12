@@ -15,13 +15,12 @@ import com.alexvasilkov.gestures.commons.RecyclePagerAdapter
 import com.alexvasilkov.gestures.transition.GestureTransitions
 import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator
 import com.alexvasilkov.gestures.transition.tracker.SimpleTracker
-import kz.zhombie.museum.ui.adapter.ViewPagerAdapter
-import kz.zhombie.museum.ui.base.BaseDialogFragment
-import kz.zhombie.museum.exception.PaintingLoaderNullException
 import kz.zhombie.museum.logging.Logger
 import kz.zhombie.museum.model.Painting
 import kz.zhombie.museum.model.Params
 import kz.zhombie.museum.ui.ViewHolder
+import kz.zhombie.museum.ui.adapter.ViewPagerAdapter
+import kz.zhombie.museum.ui.base.BaseDialogFragment
 import java.util.*
 import kotlin.math.min
 
@@ -112,11 +111,7 @@ class MuseumDialogFragment private constructor(
                     isFooterViewEnabled = isFooterViewEnabled
                 )
             ).apply {
-                if (!Settings.hasPaintingLoader()) {
-                    Settings.setPaintingLoader(
-                        requireNotNull(this@Builder.paintingLoader) { PaintingLoaderNullException() }
-                    )
-                }
+                Settings.setPaintingLoader(this@Builder.paintingLoader ?: Settings.getPaintingLoader())
 
                 setImageView(this@Builder.imageView)
 
@@ -186,15 +181,23 @@ class MuseumDialogFragment private constructor(
                 setPaintingInfo(painting)
             }
 
-            val startPosition = if (params?.startPosition == null) {
-                0
-            } else {
-                params?.startPosition ?: 0
+            var startPosition = params?.startPosition ?: 0
+
+            if (startPosition < 0) {
+                startPosition = 0
             }
 
-            Logger.debug(TAG, "startPosition: " + params?.startPosition)
+            if (startPosition > (params?.paintings?.lastIndex ?: 0)) {
+                startPosition = (params?.paintings?.lastIndex ?: 0)
+            }
 
-            viewsTransitionAnimator?.enter(startPosition, true)
+            Logger.debug(TAG, "startPosition: $startPosition")
+
+            if (recyclerView != null) {
+                viewsTransitionAnimator?.enter(startPosition, true)
+            } else {
+                viewsTransitionAnimator?.enter(0, true)
+            }
         }
     }
 
