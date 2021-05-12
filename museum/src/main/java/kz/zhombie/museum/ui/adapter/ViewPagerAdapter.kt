@@ -1,4 +1,4 @@
-package kz.zhombie.museum.adapter
+package kz.zhombie.museum.ui.adapter
 
 import android.view.Gravity
 import android.view.LayoutInflater

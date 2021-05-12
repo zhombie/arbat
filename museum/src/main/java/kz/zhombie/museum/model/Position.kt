@@ -1,6 +1,6 @@
-package kz.zhombie.museum
+package kz.zhombie.museum.model
 
-data class Position constructor(
+internal data class Position constructor(
     val itemPosition: Int,
     val imagePosition: Int
 ) {

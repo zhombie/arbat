@@ -1,6 +1,4 @@
-package kz.zhombie.museum
-
-import kz.zhombie.museum.model.Painting
+package kz.zhombie.museum.model
 
 internal data class Params constructor(
     val paintings: List<Painting>,

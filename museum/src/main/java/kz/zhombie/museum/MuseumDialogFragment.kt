@@ -15,11 +15,13 @@ import com.alexvasilkov.gestures.commons.RecyclePagerAdapter
 import com.alexvasilkov.gestures.transition.GestureTransitions
 import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator
 import com.alexvasilkov.gestures.transition.tracker.SimpleTracker
-import kz.zhombie.museum.adapter.ViewPagerAdapter
-import kz.zhombie.museum.base.BaseDialogFragment
+import kz.zhombie.museum.ui.adapter.ViewPagerAdapter
+import kz.zhombie.museum.ui.base.BaseDialogFragment
 import kz.zhombie.museum.exception.PaintingLoaderNullException
 import kz.zhombie.museum.logging.Logger
 import kz.zhombie.museum.model.Painting
+import kz.zhombie.museum.model.Params
+import kz.zhombie.museum.ui.ViewHolder
 import java.util.*
 import kotlin.math.min
 

@@ -1,10 +1,11 @@
-package kz.zhombie.museum
+package kz.zhombie.museum.ui
 
 import android.view.View
 import android.widget.LinearLayout
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.textview.MaterialTextView
+import kz.zhombie.museum.R
 
 internal class ViewHolder constructor(view: View) {
 

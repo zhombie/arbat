@@ -2,6 +2,7 @@ package kz.zhombie.museum
 
 import android.os.Bundle
 import kz.zhombie.museum.model.Painting
+import kz.zhombie.museum.model.Params
 
 internal class BundleManager private constructor() {
 
