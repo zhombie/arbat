@@ -20,7 +20,7 @@ internal class ViewPagerAdapter constructor(
     companion object {
         private val TAG = ViewPagerAdapter::class.java.simpleName
 
-        fun getImage(holder: RecyclePagerAdapter.ViewHolder): GestureImageView? {
+        fun getImageView(holder: RecyclePagerAdapter.ViewHolder): GestureImageView? {
             if (holder is ViewHolder) {
                 return holder.gestureImageView
             }
@@ -58,11 +58,6 @@ internal class ViewPagerAdapter constructor(
     override fun onCreateViewHolder(container: ViewGroup): RecyclePagerAdapter.ViewHolder {
         val holder = ViewHolder(container)
 
-        // Applying custom settings
-        holder.gestureImageView.controller.settings
-            .setMaxZoom(6f)
-            .doubleTapZoom = 3f
-
         // Enabling smooth scrolling when image panning turns into ViewPager scrolling.
         // Otherwise ViewPager scrolling will only be possible when image is in zoomed out state.
         holder.gestureImageView.controller.enableScrollInViewPager(viewPager)
@@ -73,9 +68,9 @@ internal class ViewPagerAdapter constructor(
     override fun onBindViewHolder(holder: RecyclePagerAdapter.ViewHolder, position: Int) {
         if (holder is ViewHolder) {
             paintingLoader.loadFullscreenImage(
-                holder.itemView.context,
-                holder.gestureImageView,
-                paintings[position].uri
+                context = holder.itemView.context,
+                imageView = holder.gestureImageView,
+                uri = paintings[position].uri
             )
         }
     }
@@ -98,6 +93,7 @@ internal class ViewPagerAdapter constructor(
         init {
             Logger.debug(TAG, "created")
 
+            // Settings
             gestureImageView.controller.settings
                 .setAnimationsDuration(225L)
                 .setBoundsType(Settings.Bounds.NORMAL)
@@ -113,7 +109,7 @@ internal class ViewPagerAdapter constructor(
                 .setPanEnabled(true)
                 .setRotationEnabled(false)
                 .setRestrictRotation(true)
-                .setZoomEnabled(true)
+                .isZoomEnabled = true
         }
     }
 

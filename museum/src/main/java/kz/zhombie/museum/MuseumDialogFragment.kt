@@ -7,9 +7,11 @@ import android.view.View
 import android.widget.ImageView
 import androidx.core.os.HandlerCompat
 import androidx.fragment.app.FragmentManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener
 import com.alexvasilkov.gestures.commons.DepthPageTransformer
+import com.alexvasilkov.gestures.commons.RecyclePagerAdapter
 import com.alexvasilkov.gestures.transition.GestureTransitions
 import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator
 import com.alexvasilkov.gestures.transition.tracker.SimpleTracker
@@ -18,6 +20,7 @@ import kz.zhombie.museum.base.BaseDialogFragment
 import kz.zhombie.museum.exception.PaintingLoaderNullException
 import kz.zhombie.museum.logging.Logger
 import kz.zhombie.museum.model.Painting
+import java.util.*
 
 class MuseumDialogFragment private constructor(
 ) : BaseDialogFragment(R.layout.museum_fragment_dialog), MuseumDialogFragmentListener {
@@ -39,9 +42,11 @@ class MuseumDialogFragment private constructor(
 
     class Builder {
         private var paintingLoader: PaintingLoader? = null
-        private var canvasView: ImageView? = null
         private var paintings: List<Painting>? = null
-        private var isFooterViewEnabled: Boolean = false
+        private var imageView: ImageView? = null
+        private var recyclerView: RecyclerView? = null
+        private var startPosition: Int? = null
+        private var isFooterViewEnabled: Boolean? = null
         private var callback: Callback? = null
 
         fun setPaintingLoader(paintingLoader: PaintingLoader): Builder {
@@ -49,13 +54,23 @@ class MuseumDialogFragment private constructor(
             return this
         }
 
-        fun setCanvasView(canvasView: ImageView): Builder {
-            this.canvasView = canvasView
+        fun setPaintings(paintings: List<Painting>): Builder {
+            this.paintings = paintings
             return this
         }
 
-        fun setPaintings(paintings: List<Painting>): Builder {
-            this.paintings = paintings
+        fun setImageView(imageView: ImageView): Builder {
+            this.imageView = imageView
+            return this
+        }
+
+        fun setRecyclerView(recyclerView: RecyclerView?): Builder {
+            this.recyclerView = recyclerView
+            return this
+        }
+
+        fun setStartPosition(position: Int): Builder {
+            this.startPosition = position
             return this
         }
 
@@ -75,14 +90,17 @@ class MuseumDialogFragment private constructor(
             return newInstance(
                 Params(
                     paintings = paintings,
+                    startPosition = startPosition,
                     isFooterViewEnabled = isFooterViewEnabled
                 )
             ).apply {
-                setCanvasView(this@Builder.canvasView)
-
                 if (!Settings.hasPaintingLoader()) {
                     Settings.setPaintingLoader(requireNotNull(paintingLoader) { PaintingLoaderNullException() })
                 }
+
+                setImageView(this@Builder.imageView)
+
+                setRecyclerView(this@Builder.recyclerView)
 
                 setCallback(this@Builder.callback)
             }
@@ -102,7 +120,9 @@ class MuseumDialogFragment private constructor(
 
     private var viewsTransitionAnimator: ViewsTransitionAnimator<Int>? = null
 
-    private var canvasView: ImageView? = null
+    private var imageView: ImageView? = null
+    private var recyclerView: RecyclerView? = null
+
     private var params: Params? = null
 
     private var isPictureShowCalled: Boolean = false
@@ -118,7 +138,7 @@ class MuseumDialogFragment private constructor(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        params = BundleManager.get(arguments)
+        params = BundleManager.parse(arguments)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -138,25 +158,27 @@ class MuseumDialogFragment private constructor(
 
             viewPagerAdapter = ViewPagerAdapter(viewHolder.viewPager, Settings.getPaintingLoader())
             viewPagerAdapter?.paintings = params?.paintings ?: emptyList()
+            viewHolder.viewPager.offscreenPageLimit = 3
             viewHolder.viewPager.addOnPageChangeListener(viewPagerListener)
             viewHolder.viewPager.setPageTransformer(true, DepthPageTransformer())
             viewHolder.viewPager.adapter = viewPagerAdapter
 
-            val viewPagerTracker: SimpleTracker = object : SimpleTracker() {
+            val recyclerViewTracker: SimpleTracker = object : SimpleTracker() {
                 override fun getViewAt(position: Int): View? {
-                    val holder = viewPagerAdapter?.getViewHolder(position)
-                    return if (holder == null) null else ViewPagerAdapter.getImage(holder)
+                    val holder: RecyclerView.ViewHolder? = recyclerView?.findViewHolderForLayoutPosition(position)
+                    return if (holder == null) null else callback?.getImageView(holder)
                 }
             }
 
-            viewsTransitionAnimator = canvasView?.let { canvasView ->
-                // Setting up and animating image transition
-                GestureTransitions.from<Int>(canvasView)
-                    .into(viewHolder.viewPager, viewPagerTracker)
+            val viewPagerTracker: SimpleTracker = object : SimpleTracker() {
+                override fun getViewAt(position: Int): View? {
+                    val holder: RecyclePagerAdapter.ViewHolder? = viewPagerAdapter?.getViewHolder(position)
+                    return if (holder == null) null else ViewPagerAdapter.getImageView(holder)
+                }
             }
 
-            if (viewsTransitionAnimator == null) {
-                viewsTransitionAnimator = GestureTransitions.fromNone<Int>()
+            viewsTransitionAnimator = recyclerView?.let {
+                GestureTransitions.from(it, recyclerViewTracker)
                     .into(viewHolder.viewPager, viewPagerTracker)
             }
 
@@ -165,14 +187,19 @@ class MuseumDialogFragment private constructor(
 
         if (savedInstanceState == null) {
             if (!params?.paintings.isNullOrEmpty()) {
-                setPaintingInfo(params?.paintings?.first())
+                val painting = params?.paintings?.first()
+                setPaintingInfo(painting)
             }
 
-            if (canvasView == null) {
-                viewsTransitionAnimator?.enter(0, false)
+            val startPosition = if (params?.startPosition == null) {
+                0
             } else {
-                viewsTransitionAnimator?.enter(0, true)
+                params?.startPosition ?: 0
             }
+
+            Logger.debug(TAG, "startPosition: " + params?.startPosition)
+
+            viewsTransitionAnimator?.enter(startPosition, true)
         }
     }
 
@@ -187,7 +214,7 @@ class MuseumDialogFragment private constructor(
         Logger.debug(TAG, "dismiss() -> ${viewsTransitionAnimator?.isLeaving}")
 
         if (viewsTransitionAnimator?.isLeaving == false) {
-            if (canvasView == null) {
+            if (imageView == null) {
                 viewsTransitionAnimator?.exit(false)
             } else {
                 viewsTransitionAnimator?.exit(true)
@@ -205,8 +232,10 @@ class MuseumDialogFragment private constructor(
         if (!isPictureShowCalled) {
             isPictureShowCalled = true
 
-            HandlerCompat.createAsync(Looper.getMainLooper())
-                .postDelayed({ canvasView?.visibility = View.VISIBLE }, 25L)
+            if (imageView != null) {
+                HandlerCompat.createAsync(Looper.getMainLooper())
+                    .postDelayed({ imageView?.visibility = View.VISIBLE }, 25L)
+            }
         }
 
         callback = null
@@ -215,7 +244,8 @@ class MuseumDialogFragment private constructor(
 
         viewPagerAdapter = null
 
-        canvasView = null
+        imageView = null
+        recyclerView = null
 
         params = null
     }
@@ -262,8 +292,10 @@ class MuseumDialogFragment private constructor(
             if (!isPictureShowCalled) {
                 isPictureShowCalled = true
 
-                HandlerCompat.createAsync(Looper.getMainLooper())
-                    .postDelayed({ canvasView?.visibility = View.VISIBLE }, 0L)
+                if (imageView != null) {
+                    HandlerCompat.createAsync(Looper.getMainLooper())
+                        .postDelayed({ imageView?.visibility = View.VISIBLE }, 0L)
+                }
             }
 
             HandlerCompat.createAsync(Looper.getMainLooper())
@@ -330,12 +362,18 @@ class MuseumDialogFragment private constructor(
      * [MuseumDialogFragmentListener] implementation
      */
 
-    override fun setCanvasView(imageView: ImageView?): MuseumDialogFragment {
-        this.canvasView = imageView
+    override fun setImageView(imageView: ImageView?): MuseumDialogFragment {
+        this.imageView = imageView
+        return this
+    }
+
+    override fun setRecyclerView(recyclerView: RecyclerView?): MuseumDialogFragment {
+        this.recyclerView = recyclerView
         return this
     }
 
     interface Callback {
+        fun getImageView(holder: RecyclerView.ViewHolder): View?
     }
 
 }

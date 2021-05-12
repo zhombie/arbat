@@ -78,7 +78,7 @@ class CoilImageLoader constructor(context: Context) : PaintingLoader {
             .crossfade(false)
             .data(uri)
             .error(R.drawable.museum_bg_black)
-            .placeholder(R.drawable.museum_bg_black)
+//            .placeholder(R.drawable.museum_bg_black)
             .precision(Precision.AUTOMATIC)
             .scale(Scale.FIT)
             .size(300, 300)

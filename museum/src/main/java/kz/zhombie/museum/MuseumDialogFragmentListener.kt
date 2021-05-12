@@ -1,7 +1,9 @@
 package kz.zhombie.museum
 
 import android.widget.ImageView
+import androidx.recyclerview.widget.RecyclerView
 
 interface MuseumDialogFragmentListener {
-    fun setCanvasView(imageView: ImageView?): MuseumDialogFragment
+    fun setImageView(imageView: ImageView?): MuseumDialogFragment
+    fun setRecyclerView(recyclerView: RecyclerView?): MuseumDialogFragment
 }
