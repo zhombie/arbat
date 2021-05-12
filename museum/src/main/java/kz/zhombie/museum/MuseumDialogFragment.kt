@@ -147,7 +147,7 @@ class MuseumDialogFragment private constructor(
 
     private var viewsTransitionAnimator: ViewsTransitionAnimator<Int>? = null
 
-    private var isPictureShowCalled: Boolean = false
+    private var isPaintingShowCalled: Boolean = false
 
     // -------------------------------------------------
 
@@ -233,8 +233,8 @@ class MuseumDialogFragment private constructor(
 
         Logger.debug(TAG, "onDestroy()")
 
-        if (!isPictureShowCalled) {
-            isPictureShowCalled = true
+        if (!isPaintingShowCalled) {
+            isPaintingShowCalled = true
 
             if (imageView != null) {
                 handler.postDelayed({ imageView?.visibility = View.VISIBLE }, 0L)
@@ -249,6 +249,8 @@ class MuseumDialogFragment private constructor(
 
         imageView = null
         recyclerView = null
+
+        viewHolder = null
 
         params = null
     }
@@ -325,28 +327,43 @@ class MuseumDialogFragment private constructor(
     /**
      * Applying [ViewPager] image animation state: fading out toolbar, title and background.
      */
-    private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) {
+    private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) = viewHolder?.let { viewHolder ->
         Logger.debug(TAG, "applyFullPagerState() -> $position, $isLeaving")
 
         val isFinished = position == 0F && isLeaving
 
-        viewHolder?.backgroundView?.visibility = if (position == 0F) View.INVISIBLE else View.VISIBLE
-        viewHolder?.backgroundView?.alpha = position
+        viewHolder.toolbar.alpha = position
+        viewHolder.backgroundView.alpha = position
 
-        viewHolder?.toolbar?.visibility = if (position == 0F) View.INVISIBLE else View.VISIBLE
-        viewHolder?.toolbar?.alpha = if (isSystemUiShown()) position else 0F
-
-        viewHolder?.footerView?.visibility = if (position == 1F) View.VISIBLE else View.INVISIBLE
-
-        if (isLeaving && position == 0f) {
-            viewPagerAdapter?.setActivated(false)
+        if (params?.isFooterViewEnabled == true) {
+            viewHolder.footerView.alpha = position
         }
 
         if (isFinished) {
-            Logger.debug(TAG, "isFinished")
+            viewHolder.toolbar.visibility = View.INVISIBLE
+            viewHolder.backgroundView.visibility = View.INVISIBLE
 
-            if (!isPictureShowCalled) {
-                isPictureShowCalled = true
+            if (params?.isFooterViewEnabled == true) {
+                viewHolder.footerView.visibility = View.INVISIBLE
+            }
+        } else {
+            viewHolder.toolbar.visibility = View.VISIBLE
+            viewHolder.backgroundView.visibility = View.VISIBLE
+
+            if (params?.isFooterViewEnabled == true) {
+                viewHolder.footerView.visibility = View.VISIBLE
+            }
+        }
+
+        viewHolder.viewPager.visibility = if (isFinished) {
+            View.INVISIBLE
+        } else {
+            View.VISIBLE
+        }
+
+        if (isFinished) {
+            if (!isPaintingShowCalled) {
+                isPaintingShowCalled = true
 
                 if (imageView != null) {
                     handler.postDelayed({ imageView?.visibility = View.VISIBLE }, 0L)

@@ -212,9 +212,14 @@ class CinemaDialogFragment private constructor(
 
         callback = null
 
+        controllerViewAnimation?.cancel()
+        controllerViewAnimation = null
+
         viewsTransitionAnimator = null
 
         screenView = null
+
+        viewHolder = null
 
         params = null
     }
