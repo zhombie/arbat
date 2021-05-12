@@ -61,6 +61,10 @@ class MuseumDialogFragment private constructor(
             return this
         }
 
+        fun setPainting(painting: Painting): Builder {
+            return setPaintings(listOf(painting))
+        }
+
         fun setPaintings(paintings: List<Painting>): Builder {
             this.paintings = paintings
             return this
@@ -107,7 +111,9 @@ class MuseumDialogFragment private constructor(
                 )
             ).apply {
                 if (!Settings.hasPaintingLoader()) {
-                    Settings.setPaintingLoader(requireNotNull(paintingLoader) { PaintingLoaderNullException() })
+                    Settings.setPaintingLoader(
+                        requireNotNull(this@Builder.paintingLoader) { PaintingLoaderNullException() }
+                    )
                 }
 
                 setImageView(this@Builder.imageView)
@@ -126,6 +132,8 @@ class MuseumDialogFragment private constructor(
             return fragment
         }
     }
+
+    private val handler by lazy { HandlerCompat.createAsync(Looper.getMainLooper()) }
 
     private var viewHolder: ViewHolder? = null
 
@@ -218,8 +226,7 @@ class MuseumDialogFragment private constructor(
             isPictureShowCalled = true
 
             if (imageView != null) {
-                HandlerCompat.createAsync(Looper.getMainLooper())
-                    .postDelayed({ imageView?.visibility = View.VISIBLE }, 25L)
+                handler.postDelayed({ imageView?.visibility = View.VISIBLE }, 0L)
             }
         }
 
@@ -330,13 +337,11 @@ class MuseumDialogFragment private constructor(
                 isPictureShowCalled = true
 
                 if (imageView != null) {
-                    HandlerCompat.createAsync(Looper.getMainLooper())
-                        .postDelayed({ imageView?.visibility = View.VISIBLE }, 0L)
+                    handler.postDelayed({ imageView?.visibility = View.VISIBLE }, 0L)
                 }
             }
 
-            HandlerCompat.createAsync(Looper.getMainLooper())
-                .postDelayed({ dismiss() }, 25L)
+            handler.postDelayed({ dismiss() }, 25L)
         }
     }
 
@@ -409,8 +414,7 @@ class MuseumDialogFragment private constructor(
         return this
     }
 
-    interface Callback {
-    }
+    interface Callback
 
     interface RecyclerViewTransitionDelegate {
         fun getImageView(holder: RecyclerView.ViewHolder): View?

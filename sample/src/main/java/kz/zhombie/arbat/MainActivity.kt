@@ -110,8 +110,7 @@ class MainActivity : AppCompatActivity() {
             dialogFragment?.dismiss()
             dialogFragment = null
             dialogFragment = MuseumDialogFragment.Builder()
-                .setPaintingLoader(requireNotNull(imageLoader))
-                .setPaintings(listOf(Painting(singleImageUri, Painting.Info("Title", "Subtitle"))))
+                .setPainting(Painting(singleImageUri, Painting.Info("Title", "Subtitle")))
                 .setImageView(imageView)
                 .setFooterViewEnabled(true)
                 .show(supportFragmentManager)
@@ -126,7 +125,6 @@ class MainActivity : AppCompatActivity() {
             dialogFragment?.dismiss()
             dialogFragment = null
             dialogFragment = MuseumDialogFragment.Builder()
-                .setPaintingLoader(requireNotNull(imageLoader))
                 .setPaintings(
                     imageUris.mapIndexed { index, uri ->
                         Painting(
