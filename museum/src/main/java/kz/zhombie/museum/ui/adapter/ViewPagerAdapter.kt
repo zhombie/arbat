@@ -104,7 +104,7 @@ internal class ViewPagerAdapter constructor(
                 .setFitMethod(Settings.Fit.INSIDE)
                 .setFlingEnabled(true)
                 .setGravity(Gravity.CENTER)
-                .setMaxZoom(2.5F)
+                .setMaxZoom(3.5F)
                 .setMinZoom(0F)
                 .setPanEnabled(true)
                 .setRotationEnabled(false)

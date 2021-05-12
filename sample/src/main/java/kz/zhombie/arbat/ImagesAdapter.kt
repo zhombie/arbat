@@ -31,12 +31,10 @@ class ImagesAdapter constructor(
     override fun getItemCount(): Int = images.size
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val holder = ViewHolder(
+        return ViewHolder(
             LayoutInflater.from(parent.context)
                 .inflate(R.layout.cell_image, parent, false)
         )
-        holder.imageView.setOnClickListener(::onImageClick)
-        return holder
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -48,18 +46,22 @@ class ImagesAdapter constructor(
     private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
 
+        init {
+            imageView.setOnClickListener(::onImageClick)
+        }
+
         fun bind(image: Uri) {
             imageLoader.loadSmallImage(itemView.context, imageView, image)
 
-            imageView.setTag(R.id.tag_selected_image, image)
+            imageView.setTag(R.id.museum_tag_selected_image, image)
         }
-    }
 
-    private fun onImageClick(view: View) {
-        val tag = view.getTag(R.id.tag_selected_image)
-        if (tag is Uri) {
-            val position: Int = images.indexOf(tag)
-            callback(position)
+        private fun onImageClick(view: View) {
+            val tag = view.getTag(R.id.museum_tag_selected_image)
+            if (tag is Uri) {
+                val position: Int = images.indexOf(tag)
+                callback(position)
+            }
         }
     }
 
