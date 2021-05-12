@@ -41,8 +41,9 @@ class MainActivity : AppCompatActivity() {
         private const val AUDIO_URL = "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3"
     }
 
+    private var imageView: ImageView? = null
     private var recyclerView: RecyclerView? = null
-    private var imageView2: ImageView? = null
+    private var videoView: ImageView? = null
     private var statusView: MaterialTextView? = null
     private var currentPositionView: MaterialTextView? = null
     private var durationView: MaterialTextView? = null
@@ -62,8 +63,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        imageView = findViewById(R.id.imageView)
         recyclerView = findViewById(R.id.recyclerView)
-        imageView2 = findViewById(R.id.imageView2)
+        videoView = findViewById(R.id.videoView)
         statusView = findViewById(R.id.statusView)
         currentPositionView = findViewById(R.id.currentPositionView)
         durationView = findViewById(R.id.durationView)
@@ -92,12 +94,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupMuseum() {
+        // ImageLoader initialization
         MuseumDialogFragment.init(requireNotNull(imageLoader), true)
 
-        recyclerView?.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-
+        // Dummy data
         val images = listOf(IMAGE_1_URL, IMAGE_2_URL, IMAGE_3_URL, IMAGE_4_URL, IMAGE_5_URL)
         val imageUris = images.map { Uri.parse(it) }
+
+        // Single image (ImageView)
+        val singleImageUri = imageUris.first()
+
+        imageLoader?.loadSmallImage(this, requireNotNull(imageView), singleImageUri)
+
+        imageView?.setOnClickListener {
+            dialogFragment?.dismiss()
+            dialogFragment = null
+            dialogFragment = MuseumDialogFragment.Builder()
+                .setPaintingLoader(requireNotNull(imageLoader))
+                .setPaintings(listOf(Painting(singleImageUri, Painting.Info("Title", "Subtitle"))))
+                .setImageView(imageView)
+                .setFooterViewEnabled(true)
+                .show(supportFragmentManager)
+        }
+
+        // ----------------------------------------------------------------------------------------
+
+        // Multiple images (RecyclerView)
+        recyclerView?.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
 
         val adapter = ImagesAdapter(requireNotNull(imageLoader)) { position ->
             dialogFragment?.dismiss()
@@ -115,7 +138,7 @@ class MainActivity : AppCompatActivity() {
                 .setRecyclerView(recyclerView)
                 .setStartPosition(position)
                 .setFooterViewEnabled(true)
-                .setCallback(object : MuseumDialogFragment.Callback {
+                .setRecyclerViewTransitionDelegate(object : MuseumDialogFragment.RecyclerViewTransitionDelegate {
                     override fun getImageView(holder: RecyclerView.ViewHolder): View? {
                         return ImagesAdapter.getImageView(holder)
                     }
@@ -128,11 +151,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupCinema() {
-        imageView2?.let { imageView ->
-            imageLoader?.loadSmallImage(this, imageView, Uri.parse(VIDEO_THUMBNAIL_URL))
-        }
+        imageLoader?.loadSmallImage(this, requireNotNull(videoView), Uri.parse(VIDEO_THUMBNAIL_URL))
 
-        imageView2?.setOnClickListener {
+        videoView?.setOnClickListener {
             dialogFragment?.dismiss()
             dialogFragment = null
             dialogFragment = CinemaDialogFragment.Builder()

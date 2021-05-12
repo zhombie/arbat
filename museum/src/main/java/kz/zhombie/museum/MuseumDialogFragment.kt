@@ -21,6 +21,7 @@ import kz.zhombie.museum.exception.PaintingLoaderNullException
 import kz.zhombie.museum.logging.Logger
 import kz.zhombie.museum.model.Painting
 import java.util.*
+import kotlin.math.min
 
 class MuseumDialogFragment private constructor(
 ) : BaseDialogFragment(R.layout.museum_fragment_dialog), MuseumDialogFragmentListener {
@@ -42,11 +43,17 @@ class MuseumDialogFragment private constructor(
 
     class Builder {
         private var paintingLoader: PaintingLoader? = null
+
         private var paintings: List<Painting>? = null
+
         private var imageView: ImageView? = null
+
         private var recyclerView: RecyclerView? = null
         private var startPosition: Int? = null
+        private var delegate: RecyclerViewTransitionDelegate? = null
+
         private var isFooterViewEnabled: Boolean? = null
+
         private var callback: Callback? = null
 
         fun setPaintingLoader(paintingLoader: PaintingLoader): Builder {
@@ -59,7 +66,7 @@ class MuseumDialogFragment private constructor(
             return this
         }
 
-        fun setImageView(imageView: ImageView): Builder {
+        fun setImageView(imageView: ImageView?): Builder {
             this.imageView = imageView
             return this
         }
@@ -71,6 +78,11 @@ class MuseumDialogFragment private constructor(
 
         fun setStartPosition(position: Int): Builder {
             this.startPosition = position
+            return this
+        }
+
+        fun setRecyclerViewTransitionDelegate(delegate: RecyclerViewTransitionDelegate): Builder {
+            this.delegate = delegate
             return this
         }
 
@@ -101,6 +113,7 @@ class MuseumDialogFragment private constructor(
                 setImageView(this@Builder.imageView)
 
                 setRecyclerView(this@Builder.recyclerView)
+                setRecyclerViewTransitionDelegate(this@Builder.delegate)
 
                 setCallback(this@Builder.callback)
             }
@@ -127,7 +140,12 @@ class MuseumDialogFragment private constructor(
 
     private var isPictureShowCalled: Boolean = false
 
+    private var delegate: RecyclerViewTransitionDelegate? = null
     private var callback: Callback? = null
+
+    private fun setRecyclerViewTransitionDelegate(delegate: RecyclerViewTransitionDelegate?) {
+        this.delegate = delegate
+    }
 
     private fun setCallback(callback: Callback?) {
         this.callback = callback
@@ -144,46 +162,13 @@ class MuseumDialogFragment private constructor(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewHolder = ViewHolder(view).also { viewHolder ->
-            setupToolbar()
-            setupGestureImageView()
-            setupFooterView()
+        viewHolder = ViewHolder(view)
 
-            val viewPagerListener = object : SimpleOnPageChangeListener() {
-                override fun onPageSelected(position: Int) {
-                    val painting = viewPagerAdapter?.getItem(position)
-                    setPaintingInfo(painting)
-                }
-            }
-
-            viewPagerAdapter = ViewPagerAdapter(viewHolder.viewPager, Settings.getPaintingLoader())
-            viewPagerAdapter?.paintings = params?.paintings ?: emptyList()
-            viewHolder.viewPager.offscreenPageLimit = 3
-            viewHolder.viewPager.addOnPageChangeListener(viewPagerListener)
-            viewHolder.viewPager.setPageTransformer(true, DepthPageTransformer())
-            viewHolder.viewPager.adapter = viewPagerAdapter
-
-            val recyclerViewTracker: SimpleTracker = object : SimpleTracker() {
-                override fun getViewAt(position: Int): View? {
-                    val holder: RecyclerView.ViewHolder? = recyclerView?.findViewHolderForLayoutPosition(position)
-                    return if (holder == null) null else callback?.getImageView(holder)
-                }
-            }
-
-            val viewPagerTracker: SimpleTracker = object : SimpleTracker() {
-                override fun getViewAt(position: Int): View? {
-                    val holder: RecyclePagerAdapter.ViewHolder? = viewPagerAdapter?.getViewHolder(position)
-                    return if (holder == null) null else ViewPagerAdapter.getImageView(holder)
-                }
-            }
-
-            viewsTransitionAnimator = recyclerView?.let {
-                GestureTransitions.from(it, recyclerViewTracker)
-                    .into(viewHolder.viewPager, viewPagerTracker)
-            }
-
-            viewsTransitionAnimator?.addPositionUpdateListener(::applyFullViewPagerState)
-        }
+        setupToolbar()
+        setupGestureImageView()
+        setupFooterView()
+        setupViewPager()
+        setupViewTransitionAnimator()
 
         if (savedInstanceState == null) {
             if (!params?.paintings.isNullOrEmpty()) {
@@ -254,8 +239,58 @@ class MuseumDialogFragment private constructor(
         viewHolder?.toolbar?.setNavigationOnClickListener { dismiss() }
     }
 
-    private fun setPaintingInfo(painting: Painting?) {
-        if (painting == null) return
+    private fun setupViewPager() = viewHolder?.let { viewHolder ->
+        viewPagerAdapter = ViewPagerAdapter(viewHolder.viewPager, Settings.getPaintingLoader())
+        viewPagerAdapter?.paintings = params?.paintings ?: emptyList()
+        viewHolder.viewPager.offscreenPageLimit = min(params?.paintings?.size ?: 3, 3)
+
+        val viewPagerListener = object : SimpleOnPageChangeListener() {
+            override fun onPageSelected(position: Int) {
+                val painting = viewPagerAdapter?.getItem(position)
+                setPaintingInfo(painting)
+            }
+        }
+        viewHolder.viewPager.addOnPageChangeListener(viewPagerListener)
+
+        viewHolder.viewPager.setPageTransformer(true, DepthPageTransformer())
+        viewHolder.viewPager.adapter = viewPagerAdapter
+    }
+
+    private fun setupViewTransitionAnimator() = viewHolder?.let { viewHolder ->
+        val viewPagerTracker: SimpleTracker = object : SimpleTracker() {
+            override fun getViewAt(position: Int): View? {
+                val holder: RecyclePagerAdapter.ViewHolder? = viewPagerAdapter?.getViewHolder(position)
+                return if (holder == null) null else ViewPagerAdapter.getImageView(holder)
+            }
+        }
+
+        viewsTransitionAnimator = when {
+            imageView != null -> {
+                GestureTransitions.from<Int>(imageView!!)
+                    .into(viewHolder.viewPager, viewPagerTracker)
+            }
+            recyclerView != null -> {
+                val recyclerViewTracker: SimpleTracker = object : SimpleTracker() {
+                    override fun getViewAt(position: Int): View? {
+                        val holder: RecyclerView.ViewHolder? = recyclerView?.findViewHolderForLayoutPosition(position)
+                        return if (holder == null) null else delegate?.getImageView(holder)
+                    }
+                }
+
+                GestureTransitions.from(recyclerView!!, recyclerViewTracker)
+                    .into(viewHolder.viewPager, viewPagerTracker)
+            }
+            else -> {
+                GestureTransitions.fromNone<Int>()
+                    .into(viewHolder.viewPager, viewPagerTracker)
+            }
+        }
+
+        viewsTransitionAnimator?.addPositionUpdateListener(::applyFullViewPagerState)
+    }
+
+    private fun setPaintingInfo(painting: Painting?): Boolean {
+        if (painting == null) return false
 
         viewHolder?.titleView?.text = painting.info?.title
 
@@ -264,6 +299,8 @@ class MuseumDialogFragment private constructor(
         } else {
             viewHolder?.subtitleView?.text = painting.info?.subtitle
         }
+
+        return true
     }
 
     /**
@@ -373,6 +410,9 @@ class MuseumDialogFragment private constructor(
     }
 
     interface Callback {
+    }
+
+    interface RecyclerViewTransitionDelegate {
         fun getImageView(holder: RecyclerView.ViewHolder): View?
     }
 

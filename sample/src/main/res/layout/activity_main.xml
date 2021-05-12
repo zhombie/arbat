@@ -70,12 +70,12 @@
             tools:ignore="HardcodedText" />
 
         <ImageView
-            android:id="@+id/imageView2"
+            android:id="@+id/videoView"
             android:layout_width="200dp"
             android:layout_height="200dp"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="20dp"
-            android:contentDescription="@string/image"
+            android:contentDescription="@string/video"
             tools:src="@tools:sample/avatars" />
 
         <View
