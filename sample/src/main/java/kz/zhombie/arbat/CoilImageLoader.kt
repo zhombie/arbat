@@ -22,11 +22,12 @@ import coil.request.ImageResult
 import coil.size.Precision
 import coil.size.Scale
 import coil.size.ViewSizeResolver
+import coil.util.CoilUtils
 import coil.util.DebugLogger
 import kz.zhombie.museum.PaintingLoader
 import kz.zhombie.museum.component.CircularProgressDrawable
 
-class CoilImageLoader constructor(context: Context) : PaintingLoader {
+class CoilImageLoader constructor(private val context: Context) : PaintingLoader {
 
     companion object {
         private val TAG = CoilImageLoader::class.java.simpleName
@@ -55,6 +56,14 @@ class CoilImageLoader constructor(context: Context) : PaintingLoader {
             .logger(if (BuildConfig.DEBUG) DebugLogger() else null)
             .memoryCachePolicy(CachePolicy.ENABLED)
             .build()
+    }
+
+    private val cache by lazy {
+        try {
+            CoilUtils.createDefaultCache(context)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private val hashMap = hashMapOf<ImageView, Disposable>()
@@ -150,6 +159,12 @@ class CoilImageLoader constructor(context: Context) : PaintingLoader {
 
     fun clearCache() {
         Log.d(TAG, "clearCache()")
+
+        try {
+            cache?.directory()?.deleteRecursively()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         circularProgressDrawable.stop()
         imageLoader.memoryCache.clear()

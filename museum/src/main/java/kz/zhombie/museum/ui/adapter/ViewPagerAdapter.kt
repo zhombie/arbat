@@ -91,7 +91,7 @@ internal class ViewPagerAdapter constructor(
         val gestureImageView: GestureImageView = itemView.findViewById(R.id.gestureImageView)
 
         init {
-            Logger.debug(TAG, "created")
+            Logger.debug(TAG, "${ViewHolder::class.java.simpleName} created")
 
             // Settings
             gestureImageView.controller.settings
