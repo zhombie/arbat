@@ -236,12 +236,10 @@ class MuseumDialogFragment private constructor(
         if (!isPaintingShowCalled) {
             isPaintingShowCalled = true
 
-            if (imageView != null) {
-                handler.postDelayed({ imageView?.visibility = View.VISIBLE }, 0L)
-            }
-        }
+            Logger.debug(TAG, "onDestroy() -> isPaintingShowCalled: $isPaintingShowCalled")
 
-        callback = null
+            imageView?.visibility = View.VISIBLE
+        }
 
         viewsTransitionAnimator = null
 
@@ -253,6 +251,9 @@ class MuseumDialogFragment private constructor(
         viewHolder = null
 
         params = null
+
+        callback?.onDestroy()
+        callback = null
     }
 
     private fun setupToolbar() {
@@ -365,9 +366,9 @@ class MuseumDialogFragment private constructor(
             if (!isPaintingShowCalled) {
                 isPaintingShowCalled = true
 
-                if (imageView != null) {
-                    handler.postDelayed({ imageView?.visibility = View.VISIBLE }, 0L)
-                }
+                Logger.debug(TAG, "applyFullViewPagerState() -> isPaintingShowCalled: $isPaintingShowCalled")
+
+                imageView?.visibility = View.VISIBLE
             }
 
             handler.postDelayed({ dismiss() }, 25L)
@@ -443,7 +444,9 @@ class MuseumDialogFragment private constructor(
         return this
     }
 
-    interface Callback
+    interface Callback {
+        fun onDestroy()
+    }
 
     interface RecyclerViewTransitionDelegate {
         fun getImageView(holder: RecyclerView.ViewHolder): View?

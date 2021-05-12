@@ -205,12 +205,10 @@ class CinemaDialogFragment private constructor(
         if (!isMovieShowCalled) {
             isMovieShowCalled = true
 
-            if (screenView != null) {
-                handler.postDelayed({ screenView?.visibility = View.VISIBLE }, 0L)
-            }
-        }
+            Logger.debug(TAG, "onDestroy() -> isMovieShowCalled: $isMovieShowCalled")
 
-        callback = null
+            screenView?.visibility = View.VISIBLE
+        }
 
         controllerViewAnimation?.cancel()
         controllerViewAnimation = null
@@ -222,6 +220,9 @@ class CinemaDialogFragment private constructor(
         viewHolder = null
 
         params = null
+
+        callback?.onDestroy()
+        callback = null
     }
 
     private fun setupToolbar() {
@@ -422,15 +423,12 @@ class CinemaDialogFragment private constructor(
             if (!isMovieShowCalled) {
                 isMovieShowCalled = true
 
-                if (screenView != null) {
-                    handler.postDelayed({ screenView?.visibility = View.VISIBLE }, 0L)
-                }
+                Logger.debug(TAG, "applyFullViewPagerState() -> isMovieShowCalled: $isMovieShowCalled")
+
+                screenView?.visibility = View.VISIBLE
             }
 
-            viewHolder.gestureFrameLayout.controller.settings.disableBounds()
-            viewHolder.gestureFrameLayout.positionAnimator.setState(0F, false, false)
-
-            viewHolder.gestureFrameLayout.postDelayed({ dismiss() }, 17L)
+            handler.postDelayed({ dismiss() }, 25L)
         }
     }
 
@@ -566,6 +564,8 @@ class CinemaDialogFragment private constructor(
         return this
     }
 
-    interface Callback
+    interface Callback {
+        fun onDestroy()
+    }
 
 }
