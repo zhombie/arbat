@@ -10,12 +10,10 @@
         android:id="@+id/backgroundView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/museum_dark_black"
-        android:visibility="invisible"
-        tools:visibility="visible" />
+        android:background="@color/museum_dark_black" />
 
-    <com.alexvasilkov.gestures.views.GestureImageView
-        android:id="@+id/gestureImageView"
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:src="@tools:sample/backgrounds/scenic" />

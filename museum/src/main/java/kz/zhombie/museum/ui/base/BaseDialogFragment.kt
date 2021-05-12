@@ -1,4 +1,4 @@
-package kz.zhombie.museum.base
+package kz.zhombie.museum.ui.base
 
 import android.app.Dialog
 import android.os.Bundle
@@ -17,7 +17,7 @@ open class BaseDialogFragment constructor(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        activity?.onBackPressedDispatcher?.addCallback(this, onBackPressedCallback)
+        setStyle(STYLE_NORMAL, theme)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -26,17 +26,17 @@ open class BaseDialogFragment constructor(
         return dialog
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-
-//        onBackPressedCallback.remove()
+    /**
+     * Checks if system UI (status bar and navigation bar) is shown or we are in fullscreen mode.
+     */
+    protected fun isSystemUiShown(): Boolean {
+        return true
     }
 
-//    private val onBackPressedCallback by lazy {
-//        object : OnBackPressedCallback(true) {
-//            override fun handleOnBackPressed() {
-//                dismiss()
-//            }
-//        }
-//    }
+    /**
+     * Shows or hides system UI (status bar and navigation bar).
+     */
+    protected fun showSystemUi(show: Boolean) {
+    }
+
 }
