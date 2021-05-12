@@ -9,6 +9,16 @@ data class Painting constructor(
     val info: Info? = null
 ) : Parcelable {
 
+    companion object CREATOR : Parcelable.Creator<Painting> {
+        override fun createFromParcel(parcel: Parcel): Painting {
+            return Painting(parcel)
+        }
+
+        override fun newArray(size: Int): Array<Painting?> {
+            return arrayOfNulls(size)
+        }
+    }
+
     constructor(parcel: Parcel) : this(
         uri = parcel.readParcelable(Uri::class.java.classLoader) ?: Uri.EMPTY,
         info = parcel.readParcelable(Info::class.java.classLoader)
@@ -19,7 +29,20 @@ data class Painting constructor(
         val subtitle: String? = null
     ) : Parcelable {
 
-        constructor(parcel: Parcel) : this(title = parcel.readString(), subtitle = parcel.readString())
+        companion object CREATOR : Parcelable.Creator<Info> {
+            override fun createFromParcel(parcel: Parcel): Info {
+                return Info(parcel)
+            }
+
+            override fun newArray(size: Int): Array<Info?> {
+                return arrayOfNulls(size)
+            }
+        }
+
+        constructor(parcel: Parcel) : this(
+            title = parcel.readString(),
+            subtitle = parcel.readString()
+        )
 
         override fun writeToParcel(parcel: Parcel, flags: Int) {
             parcel.writeString(title)
@@ -30,15 +53,6 @@ data class Painting constructor(
             return 0
         }
 
-        companion object CREATOR : Parcelable.Creator<Info> {
-            override fun createFromParcel(parcel: Parcel): Info {
-                return Info(parcel)
-            }
-
-            override fun newArray(size: Int): Array<Info?> {
-                return arrayOfNulls(size)
-            }
-        }
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -48,16 +62,6 @@ data class Painting constructor(
 
     override fun describeContents(): Int {
         return 0
-    }
-
-    companion object CREATOR : Parcelable.Creator<Painting> {
-        override fun createFromParcel(parcel: Parcel): Painting {
-            return Painting(parcel)
-        }
-
-        override fun newArray(size: Int): Array<Painting?> {
-            return arrayOfNulls(size)
-        }
     }
 
 }

@@ -298,6 +298,7 @@ class MuseumDialogFragment private constructor(
             }
         }
 
+        // Setting up and animating image transition
         viewsTransitionAnimator?.addPositionUpdateListener(::applyFullViewPagerState)
     }
 
