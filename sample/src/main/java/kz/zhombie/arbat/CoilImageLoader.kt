@@ -91,6 +91,18 @@ class CoilImageLoader constructor(context: Context) : PaintingLoader {
     override fun loadFullscreenImage(context: Context, imageView: ImageView, uri: Uri) {
         Log.d(TAG, "loadFullscreenImage() -> imageView: $imageView")
 
+        fun startProgress() {
+            if (!circularProgressDrawable.isRunning) {
+                circularProgressDrawable.start()
+            }
+        }
+
+        fun stopProgress() {
+            if (circularProgressDrawable.isRunning) {
+                circularProgressDrawable.stop()
+            }
+        }
+
         val request = ImageRequest.Builder(context)
             .bitmapConfig(Bitmap.Config.ARGB_8888)
             .crossfade(false)
@@ -103,27 +115,19 @@ class CoilImageLoader constructor(context: Context) : PaintingLoader {
             .listener(
                 onStart = {
                     Log.d(TAG, "onStart()")
-                    if (!circularProgressDrawable.isRunning) {
-                        circularProgressDrawable.start()
-                    }
+                    startProgress()
                 },
                 onCancel = {
                     Log.d(TAG, "onCancel()")
-                    if (circularProgressDrawable.isRunning) {
-                        circularProgressDrawable.stop()
-                    }
+                    stopProgress()
                 },
                 onError = { _, throwable ->
                     Log.d(TAG, "onError() -> throwable: $throwable")
-                    if (circularProgressDrawable.isRunning) {
-                        circularProgressDrawable.stop()
-                    }
+                    stopProgress()
                 },
                 onSuccess = { _, metadata: ImageResult.Metadata ->
                     Log.d(TAG, "onError() -> metadata: $metadata")
-                    if (circularProgressDrawable.isRunning) {
-                        circularProgressDrawable.stop()
-                    }
+                    stopProgress()
                 },
             )
             .target(imageView)
@@ -135,7 +139,10 @@ class CoilImageLoader constructor(context: Context) : PaintingLoader {
     override fun dispose(imageView: ImageView) {
         Log.d(TAG, "dispose() -> imageView: $imageView")
 
-        hashMap[imageView]?.dispose()
+        if (hashMap[imageView] != null && hashMap[imageView]?.isDisposed == false) {
+            hashMap[imageView]?.dispose()
+        }
+
         hashMap.remove(imageView)
 
         imageView.setImageDrawable(null)
