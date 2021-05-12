@@ -132,18 +132,24 @@ class MuseumDialogFragment private constructor(
 
     private val handler by lazy { HandlerCompat.createAsync(Looper.getMainLooper()) }
 
-    private var viewHolder: ViewHolder? = null
-
-    private var viewPagerAdapter: ViewPagerAdapter? = null
-
-    private var viewsTransitionAnimator: ViewsTransitionAnimator<Int>? = null
+    // -------------------------------------------------
 
     private var imageView: ImageView? = null
     private var recyclerView: RecyclerView? = null
 
     private var params: Params? = null
 
+    // -------------------------------------------------
+
+    private var viewHolder: ViewHolder? = null
+
+    private var viewPagerAdapter: ViewPagerAdapter? = null
+
+    private var viewsTransitionAnimator: ViewsTransitionAnimator<Int>? = null
+
     private var isPictureShowCalled: Boolean = false
+
+    // -------------------------------------------------
 
     private var delegate: RecyclerViewTransitionDelegate? = null
     private var callback: Callback? = null

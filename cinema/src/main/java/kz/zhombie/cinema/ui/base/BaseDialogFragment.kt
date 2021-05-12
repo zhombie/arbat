@@ -1,4 +1,4 @@
-package kz.zhombie.cinema.base
+package kz.zhombie.cinema.ui.base
 
 import android.app.Dialog
 import android.os.Bundle
@@ -17,7 +17,7 @@ open class BaseDialogFragment constructor(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        activity?.onBackPressedDispatcher?.addCallback(this, onBackPressedCallback)
+        setStyle(STYLE_NORMAL, theme)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -25,19 +25,5 @@ open class BaseDialogFragment constructor(
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         return dialog
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-//        onBackPressedCallback.remove()
-    }
-
-//    private val onBackPressedCallback by lazy {
-//        object : OnBackPressedCallback(true) {
-//            override fun handleOnBackPressed() {
-//                dismiss()
-//            }
-//        }
-//    }
 
 }

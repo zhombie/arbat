@@ -1,14 +1,13 @@
 package kz.zhombie.cinema
 
 import android.content.DialogInterface
-import android.net.Uri
 import android.os.Bundle
+import android.os.Looper
 import android.view.*
-import android.widget.FrameLayout
-import android.widget.LinearLayout
+import androidx.core.os.HandlerCompat
 import androidx.fragment.app.FragmentManager
-import com.alexvasilkov.gestures.animation.ViewPosition
-import com.alexvasilkov.gestures.views.GestureFrameLayout
+import com.alexvasilkov.gestures.transition.GestureTransitions
+import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.metadata.Metadata
@@ -18,12 +17,11 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.android.material.textview.MaterialTextView
-import kz.zhombie.cinema.base.BaseDialogFragment
 import kz.zhombie.cinema.logging.Logger
+import kz.zhombie.cinema.model.Movie
+import kz.zhombie.cinema.model.Params
+import kz.zhombie.cinema.ui.ViewHolder
+import kz.zhombie.cinema.ui.base.BaseDialogFragment
 
 class CinemaDialogFragment private constructor(
 ) : BaseDialogFragment(R.layout.cinema_fragment_dialog), CinemaDialogFragmentListener {
@@ -35,56 +33,26 @@ class CinemaDialogFragment private constructor(
             Settings.setLoggingEnabled(isLoggingEnabled)
         }
 
-        private fun newInstance(
-            uri: Uri,
-            title: String? = null,
-            subtitle: String? = null,
-            startViewPosition: ViewPosition,
-            isFooterViewEnabled: Boolean
-        ): CinemaDialogFragment {
+        private fun newInstance(params: Params): CinemaDialogFragment {
             val fragment = CinemaDialogFragment()
-            fragment.arguments = Bundle().apply {
-                putString(BundleKey.URI, uri.toString())
-                putString(BundleKey.TITLE, title)
-                if (!subtitle.isNullOrBlank()) putString(BundleKey.SUBTITLE, subtitle)
-                putString(BundleKey.START_VIEW_POSITION, startViewPosition.pack())
-                putBoolean(BundleKey.IS_FOOTER_VIEW_ENABLED, isFooterViewEnabled)
-            }
+            fragment.arguments = BundleManager.build(params)
             return fragment
         }
     }
 
     class Builder {
+        private var movie: Movie? = null
         private var screenView: View? = null
-        private var uri: Uri? = null
-        private var title: String? = null
-        private var subtitle: String? = null
-        private var viewPosition: ViewPosition? = null
         private var isFooterViewEnabled: Boolean = false
         private var callback: Callback? = null
 
+        fun setMovie(movie: Movie): Builder {
+            this.movie = movie
+            return this
+        }
+
         fun setScreenView(screenView: View): Builder {
             this.screenView = screenView
-            return this
-        }
-
-        fun setUri(uri: Uri): Builder {
-            this.uri = uri
-            return this
-        }
-
-        fun setTitle(title: String): Builder {
-            this.title = title
-            return this
-        }
-
-        fun setSubtitle(subtitle: String?): Builder {
-            this.subtitle = subtitle
-            return this
-        }
-
-        fun setStartViewPosition(view: View): Builder {
-            this.viewPosition = ViewPosition.from(view)
             return this
         }
 
@@ -100,134 +68,84 @@ class CinemaDialogFragment private constructor(
 
         fun build(): CinemaDialogFragment {
             return newInstance(
-                uri = requireNotNull(uri) { "Cinema movie uri is mandatory value" },
-                title = title,
-                subtitle = subtitle,
-                startViewPosition = requireNotNull(viewPosition) {
-                    "Cinema movie needs start view position, in order to make smooth transition animation"
-                },
-                isFooterViewEnabled = isFooterViewEnabled
+                Params(
+                    movie = requireNotNull(movie) { "Cinema movie is mandatory value" },
+                    isFooterViewEnabled = isFooterViewEnabled
+                )
             ).apply {
-                this@Builder.screenView?.let { setScreenView(it) }
+                setScreenView(this@Builder.screenView)
 
-                this@Builder.callback?.let { setCallback(it) }
+                setCallback(this@Builder.callback)
             }
         }
 
         fun show(fragmentManager: FragmentManager): CinemaDialogFragment {
             val fragment = build()
-//            val transaction = fragmentManager.beginTransaction()
-//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-//            transaction
-//                .add(android.R.id.content, fragment)
-//                .commit()
             fragment.isCancelable = true
             fragment.show(fragmentManager, null)
             return fragment
         }
     }
 
-    private object BundleKey {
-        const val URI = "uri"
-        const val TITLE = "title"
-        const val SUBTITLE = "subtitle"
-        const val START_VIEW_POSITION = "start_view_position"
-        const val IS_FOOTER_VIEW_ENABLED = "is_footer_view_enabled"
-    }
+    private val handler by lazy { HandlerCompat.createAsync(Looper.getMainLooper()) }
 
-    private lateinit var toolbar: MaterialToolbar
-    private lateinit var backgroundView: View
-    private lateinit var gestureFrameLayout: GestureFrameLayout
-    private lateinit var playerView: PlayerView
-    private lateinit var controllerView: FrameLayout
-    private lateinit var playOrPauseButton: MaterialButton
-    private lateinit var progressIndicator: CircularProgressIndicator
-    private lateinit var footerView: LinearLayout
-    private lateinit var titleView: MaterialTextView
-    private lateinit var subtitleView: MaterialTextView
+    // -------------------------------------------------
 
-    private var callback: Callback? = null
+    private var screenView: View? = null
 
-    fun setCallback(callback: Callback) {
-        this.callback = callback
-    }
+    private var params: Params? = null
+
+    // -------------------------------------------------
+
+    private var viewHolder: ViewHolder? = null
+
+    private var player: SimpleExoPlayer? = null
+
+    private var viewsTransitionAnimator: ViewsTransitionAnimator<Any>? = null
+
+    private var controllerViewAnimation: ViewPropertyAnimator? = null
 
     private var isMovieShowCalled: Boolean = false
 
     private var isOverlayViewVisible: Boolean = true
 
-    private var screenView: View? = null
-        set(value) {
-            field = value
+    // -------------------------------------------------
 
-            if (value != null) {
-                if (onGlobalLayoutListener == null) {
-                    onGlobalLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
-                        onTrackViewPosition(value)
-                    }
+    private var callback: Callback? = null
 
-                    if (value.viewTreeObserver.isAlive) {
-                        value.viewTreeObserver.addOnGlobalLayoutListener(onGlobalLayoutListener)
-                    }
-                }
-            }
-        }
-
-    private var onGlobalLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
-
-    private var player: SimpleExoPlayer? = null
-
-    private lateinit var uri: Uri
-    private var title: String? = null
-    private var subtitle: String? = null
-    private lateinit var startViewPosition: ViewPosition
-    private var isFooterViewEnabled: Boolean = false
-
-    private var controllerViewAnimation: ViewPropertyAnimator? = null
-
-    override fun getTheme(): Int {
-        return R.style.Cinema_Dialog_Fullscreen
+    private fun setCallback(callback: Callback?) {
+        this.callback = callback
     }
+
+    override fun getTheme(): Int = R.style.Cinema_Dialog_Fullscreen
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setStyle(STYLE_NORMAL, theme)
-
-        val arguments = arguments
-        require(arguments != null) { "Provide arguments!" }
-        uri = Uri.parse(requireNotNull(arguments.getString(BundleKey.URI)))
-        title = arguments.getString(BundleKey.TITLE)
-        subtitle = arguments.getString(BundleKey.SUBTITLE)
-        startViewPosition = ViewPosition.unpack(arguments.getString(BundleKey.START_VIEW_POSITION))
-        isFooterViewEnabled = arguments.getBoolean(BundleKey.IS_FOOTER_VIEW_ENABLED)
+        params = BundleManager.parse(arguments)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        toolbar = view.findViewById(R.id.toolbar)
-        backgroundView = view.findViewById(R.id.backgroundView)
-        gestureFrameLayout = view.findViewById(R.id.gestureFrameLayout)
-        playerView = view.findViewById(R.id.playerView)
-        controllerView = view.findViewById(R.id.controllerView)
-        playOrPauseButton = view.findViewById(R.id.playOrPauseButton)
-        progressIndicator = view.findViewById(R.id.progressIndicator)
-        footerView = view.findViewById(R.id.footerView)
-        titleView = view.findViewById(R.id.titleView)
-        subtitleView = view.findViewById(R.id.subtitleView)
+        viewHolder = ViewHolder(view)
 
         setupToolbar()
         setupBackgroundView()
         setupGestureFrameLayout()
+        setupViewTransitionAnimator()
         setupInfo()
         setupPlayer()
         setupControllerView()
         setupFooterView()
 
+        if (savedInstanceState == null) {
+            viewsTransitionAnimator?.enterSingle(true)
+        }
+
         try {
             val mediaItem = MediaItem.Builder()
-                .setUri(uri)
+                .setUri(params?.movie?.uri)
                 .setMimeType(MimeTypes.BASE_TYPE_VIDEO)
                 .build()
 
@@ -246,80 +164,17 @@ class CinemaDialogFragment private constructor(
             e.printStackTrace()
             eventListener.onPlayerError(ExoPlaybackException.createForUnexpected(e))
         }
-
-        gestureFrameLayout.positionAnimator.addPositionUpdateListener { position, isLeaving ->
-            val isFinished = position == 0F && isLeaving
-
-            toolbar.alpha = position
-            backgroundView.alpha = position
-            controllerView.alpha = position
-
-            if (isFooterViewEnabled) {
-                footerView.alpha = position
-            }
-
-            if (isLeaving) {
-                controllerView.visibility = View.INVISIBLE
-            } else {
-                controllerView.visibility = View.VISIBLE
-            }
-
-            if (isFinished) {
-                toolbar.visibility = View.INVISIBLE
-                backgroundView.visibility = View.INVISIBLE
-
-                if (isFooterViewEnabled) {
-                    footerView.visibility = View.INVISIBLE
-                }
-            } else {
-                toolbar.visibility = View.VISIBLE
-                backgroundView.visibility = View.VISIBLE
-
-                if (isFooterViewEnabled) {
-                    footerView.visibility = View.VISIBLE
-                }
-            }
-
-            gestureFrameLayout.visibility = if (isFinished) {
-                View.INVISIBLE
-            } else {
-                View.VISIBLE
-            }
-
-            if (isFinished) {
-                if (!isMovieShowCalled) {
-                    callback?.onMovieShow(0L)
-                    isMovieShowCalled = true
-                }
-
-                gestureFrameLayout.controller.settings.disableBounds()
-                gestureFrameLayout.positionAnimator.setState(0F, false, false)
-
-                gestureFrameLayout.postDelayed({ super.dismiss() }, 17L)
-            }
-        }
-
-        gestureFrameLayout.positionAnimator.enter(startViewPosition, savedInstanceState == null)
-
-        gestureFrameLayout.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                gestureFrameLayout.viewTreeObserver.removeOnPreDrawListener(this)
-                callback?.onMovieHide(17L)
-                return true
-            }
-        })
-        gestureFrameLayout.invalidate()
     }
 
     override fun onPause() {
         super.onPause()
-        playerView.onPause()
+        viewHolder?.playerView?.onPause()
         releasePlayer()
     }
 
     override fun onStop() {
         super.onStop()
-        playerView.onPause()
+        viewHolder?.playerView?.onPause()
         releasePlayer()
     }
 
@@ -328,105 +183,132 @@ class CinemaDialogFragment private constructor(
     }
 
     override fun dismiss() {
-        if (this::gestureFrameLayout.isInitialized) {
-            if (!gestureFrameLayout.positionAnimator.isLeaving) {
-                gestureFrameLayout.positionAnimator.exit(true)
+        Logger.debug(TAG, "dismiss()")
+        Logger.debug(TAG, "dismiss() -> ${viewsTransitionAnimator?.isLeaving}")
+
+        if (viewsTransitionAnimator?.isLeaving == false) {
+            if (screenView == null) {
+                viewsTransitionAnimator?.exit(false)
+            } else {
+                viewsTransitionAnimator?.exit(true)
             }
+        } else {
+            super.dismiss()
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
+        Logger.debug(TAG, "onDestroy()")
+
         if (!isMovieShowCalled) {
-            callback?.onMovieShow(0L)
             isMovieShowCalled = true
-        }
 
-        if (screenView?.viewTreeObserver?.isAlive == true) {
-            screenView?.viewTreeObserver?.removeOnGlobalLayoutListener(onGlobalLayoutListener)
+            if (screenView != null) {
+                handler.postDelayed({ screenView?.visibility = View.VISIBLE }, 0L)
+            }
         }
-
-        onGlobalLayoutListener = null
-        screenView = null
 
         callback = null
+
+        viewsTransitionAnimator = null
+
+        screenView = null
+
+        params = null
     }
 
     private fun setupToolbar() {
-        toolbar.setNavigationOnClickListener { dismiss() }
+        viewHolder?.toolbar?.setNavigationOnClickListener { dismiss() }
     }
 
     private fun setupBackgroundView() {
-        backgroundView.visibility = View.VISIBLE
+        viewHolder?.backgroundView?.visibility = View.VISIBLE
+    }
+
+    private fun setupViewTransitionAnimator() = viewHolder?.let { viewHolder ->
+        viewsTransitionAnimator = when {
+            screenView != null -> {
+                GestureTransitions.from<Any>(screenView!!)
+                    .into(viewHolder.gestureFrameLayout)
+            }
+            else -> {
+                GestureTransitions.fromNone<Any>()
+                    .into(viewHolder.gestureFrameLayout)
+            }
+        }
+
+        // Setting up and animating image transition
+        viewsTransitionAnimator?.addPositionUpdateListener(::applyFullViewPagerState)
     }
 
     private fun setupGestureFrameLayout() {
         // Settings
-        gestureFrameLayout.controller.settings
-            .setAnimationsDuration(225L)
-            .setBoundsType(com.alexvasilkov.gestures.Settings.Bounds.NORMAL)
-            .setDoubleTapEnabled(false)
-            .setExitEnabled(true)
-            .setExitType(com.alexvasilkov.gestures.Settings.ExitType.SCROLL)
-            .setFillViewport(true)
-            .setFitMethod(com.alexvasilkov.gestures.Settings.Fit.INSIDE)
-            .setFlingEnabled(true)
-            .setGravity(Gravity.CENTER)
-            .setMaxZoom(2.5F)
-            .setMinZoom(0F)
-            .setPanEnabled(true)
-            .setZoomEnabled(true)
+        viewHolder?.gestureFrameLayout?.controller?.settings
+            ?.setAnimationsDuration(225L)
+            ?.setBoundsType(com.alexvasilkov.gestures.Settings.Bounds.NORMAL)
+            ?.setDoubleTapEnabled(true)
+            ?.setExitEnabled(true)
+            ?.setExitType(com.alexvasilkov.gestures.Settings.ExitType.SCROLL)
+            ?.setFillViewport(true)
+            ?.setFitMethod(com.alexvasilkov.gestures.Settings.Fit.INSIDE)
+            ?.setFlingEnabled(true)
+            ?.setGravity(Gravity.CENTER)
+            ?.setMaxZoom(2.5F)
+            ?.setMinZoom(0F)
+            ?.setPanEnabled(true)
+            ?.isZoomEnabled = true
 
         // Click actions
-        gestureFrameLayout.setOnClickListener {
+        viewHolder?.gestureFrameLayout?.setOnClickListener {
             if (isOverlayViewVisible) {
-                toolbar.animate()
-                    .alpha(0.0F)
-                    .setDuration(50L)
-                    .withEndAction {
-                        toolbar.visibility = View.INVISIBLE
+                viewHolder?.toolbar?.animate()
+                    ?.alpha(0.0F)
+                    ?.setDuration(50L)
+                    ?.withEndAction {
+                        viewHolder?.toolbar?.visibility = View.INVISIBLE
                     }
-                    .start()
+                    ?.start()
 
                 controllerViewAnimation?.cancel()
                 controllerViewAnimation = null
 
-                controllerView.visibility = View.INVISIBLE
+                viewHolder?.controllerView?.visibility = View.INVISIBLE
 
-                if (isFooterViewEnabled) {
-                    footerView.animate()
-                        .alpha(0.0F)
-                        .setDuration(50L)
-                        .withEndAction {
-                            footerView.visibility = View.INVISIBLE
+                if (params?.isFooterViewEnabled == true) {
+                    viewHolder?.footerView?.animate()
+                        ?.alpha(0.0F)
+                        ?.setDuration(50L)
+                        ?.withEndAction {
+                            viewHolder?.footerView?.visibility = View.INVISIBLE
                         }
-                        .start()
+                        ?.start()
                 }
 
                 isOverlayViewVisible = false
             } else {
-                toolbar.animate()
-                    .alpha(1.0F)
-                    .setDuration(50L)
-                    .withStartAction {
-                        toolbar.visibility = View.VISIBLE
+                viewHolder?.toolbar?.animate()
+                    ?.alpha(1.0F)
+                    ?.setDuration(50L)
+                    ?.withStartAction {
+                        viewHolder?.toolbar?.visibility = View.VISIBLE
                     }
-                    .start()
+                    ?.start()
 
                 controllerViewAnimation?.cancel()
                 controllerViewAnimation = null
 
-                controllerView.visibility = View.VISIBLE
+                viewHolder?.controllerView?.visibility = View.VISIBLE
 
-                if (isFooterViewEnabled) {
-                    footerView.animate()
-                        .alpha(1.0F)
-                        .setDuration(50L)
-                        .withStartAction {
-                            footerView.visibility = View.VISIBLE
+                if (params?.isFooterViewEnabled == true) {
+                    viewHolder?.footerView?.animate()
+                        ?.alpha(1.0F)
+                        ?.setDuration(50L)
+                        ?.withStartAction {
+                            viewHolder?.footerView?.visibility = View.VISIBLE
                         }
-                        .start()
+                        ?.start()
                 }
 
                 isOverlayViewVisible = true
@@ -435,13 +317,14 @@ class CinemaDialogFragment private constructor(
     }
 
     private fun setupInfo() {
-        titleView.text = title
+        viewHolder?.titleView?.text = params?.movie?.info?.title
 
+        val subtitle = params?.movie?.info?.subtitle
         if (subtitle.isNullOrBlank()) {
-            subtitleView.visibility = View.GONE
+            viewHolder?.subtitleView?.visibility = View.GONE
         } else {
-            subtitleView.text = subtitle
-            subtitleView.visibility = View.VISIBLE
+            viewHolder?.subtitleView?.text = subtitle
+            viewHolder?.subtitleView?.visibility = View.VISIBLE
         }
     }
 
@@ -451,16 +334,16 @@ class CinemaDialogFragment private constructor(
                 .setAudioAttributes(AudioAttributes.DEFAULT, true)
                 .build()
 
-            playerView.player = player
-            playerView.setShowPreviousButton(false)
-            playerView.setShowNextButton(false)
-            playerView.setShowRewindButton(false)
-            playerView.setShowRewindButton(false)
-            playerView.setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
-            playerView.setShowFastForwardButton(false)
-            playerView.setUseSensorRotation(false)
-            playerView.useController = false
-            playerView.controllerAutoShow = false
+            viewHolder?.playerView?.player = player
+            viewHolder?.playerView?.setShowPreviousButton(false)
+            viewHolder?.playerView?.setShowNextButton(false)
+            viewHolder?.playerView?.setShowRewindButton(false)
+            viewHolder?.playerView?.setShowRewindButton(false)
+            viewHolder?.playerView?.setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
+            viewHolder?.playerView?.setShowFastForwardButton(false)
+            viewHolder?.playerView?.setUseSensorRotation(false)
+            viewHolder?.playerView?.useController = false
+            viewHolder?.playerView?.controllerAutoShow = false
 
             player?.playWhenReady = true
             player?.pauseAtEndOfMediaItems = true
@@ -471,7 +354,7 @@ class CinemaDialogFragment private constructor(
     }
 
     private fun setupControllerView() {
-        playOrPauseButton.setOnClickListener {
+        viewHolder?.playOrPauseButton?.setOnClickListener {
             if (player?.isPlaying == true) {
                 player?.pause()
             } else {
@@ -481,10 +364,68 @@ class CinemaDialogFragment private constructor(
     }
 
     private fun setupFooterView() {
-        if (isFooterViewEnabled) {
-            footerView.visibility = View.VISIBLE
+        if (params?.isFooterViewEnabled == true) {
+            viewHolder?.footerView?.visibility = View.VISIBLE
         } else {
-            footerView.visibility = View.GONE
+            viewHolder?.footerView?.visibility = View.GONE
+        }
+    }
+
+    /**
+     * Applying [View] image animation state: fading out toolbar, title and background.
+     */
+    private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) = viewHolder?.let { viewHolder ->
+        val isFinished = position == 0F && isLeaving
+
+        viewHolder.toolbar.alpha = position
+        viewHolder.backgroundView.alpha = position
+        viewHolder.controllerView.alpha = position
+
+        if (params?.isFooterViewEnabled == true) {
+            viewHolder.footerView.alpha = position
+        }
+
+        if (isLeaving) {
+            viewHolder.controllerView.visibility = View.INVISIBLE
+        } else {
+            viewHolder.controllerView.visibility = View.VISIBLE
+        }
+
+        if (isFinished) {
+            viewHolder.toolbar.visibility = View.INVISIBLE
+            viewHolder.backgroundView.visibility = View.INVISIBLE
+
+            if (params?.isFooterViewEnabled == true) {
+                viewHolder.footerView.visibility = View.INVISIBLE
+            }
+        } else {
+            viewHolder.toolbar.visibility = View.VISIBLE
+            viewHolder.backgroundView.visibility = View.VISIBLE
+
+            if (params?.isFooterViewEnabled == true) {
+                viewHolder.footerView.visibility = View.VISIBLE
+            }
+        }
+
+        viewHolder.gestureFrameLayout.visibility = if (isFinished) {
+            View.INVISIBLE
+        } else {
+            View.VISIBLE
+        }
+
+        if (isFinished) {
+            if (!isMovieShowCalled) {
+                isMovieShowCalled = true
+
+                if (screenView != null) {
+                    handler.postDelayed({ screenView?.visibility = View.VISIBLE }, 0L)
+                }
+            }
+
+            viewHolder.gestureFrameLayout.controller.settings.disableBounds()
+            viewHolder.gestureFrameLayout.positionAnimator.setState(0F, false, false)
+
+            viewHolder.gestureFrameLayout.postDelayed({ dismiss() }, 17L)
         }
     }
 
@@ -530,24 +471,24 @@ class CinemaDialogFragment private constructor(
                 if (state == Player.STATE_ENDED) {
                     player?.seekTo(0)
 
-                    toolbar.alpha = 1.0F
-                    toolbar.visibility = View.VISIBLE
+                    viewHolder?.toolbar?.alpha = 1.0F
+                    viewHolder?.toolbar?.visibility = View.VISIBLE
 
-                    controllerView.alpha = 1.0F
-                    controllerView.visibility = View.VISIBLE
+                    viewHolder?.controllerView?.alpha = 1.0F
+                    viewHolder?.controllerView?.visibility = View.VISIBLE
 
-                    if (isFooterViewEnabled) {
-                        footerView.alpha = 1.0F
-                        footerView.visibility = View.VISIBLE
+                    if (params?.isFooterViewEnabled == true) {
+                        viewHolder?.footerView?.alpha = 1.0F
+                        viewHolder?.footerView?.visibility = View.VISIBLE
                     }
                 }
 
                 if (state == Player.STATE_BUFFERING) {
-                    playOrPauseButton.visibility = View.INVISIBLE
-                    progressIndicator.visibility = View.VISIBLE
+                    viewHolder?.playOrPauseButton?.visibility = View.INVISIBLE
+                    viewHolder?.progressIndicator?.visibility = View.VISIBLE
                 } else {
-                    progressIndicator.visibility = View.INVISIBLE
-                    playOrPauseButton.visibility = View.VISIBLE
+                    viewHolder?.progressIndicator?.visibility = View.INVISIBLE
+                    viewHolder?.playOrPauseButton?.visibility = View.VISIBLE
                 }
             }
 
@@ -563,19 +504,19 @@ class CinemaDialogFragment private constructor(
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (isPlaying) {
-                    playOrPauseButton.setIconResource(R.drawable.exo_icon_pause)
+                    viewHolder?.playOrPauseButton?.setIconResource(R.drawable.exo_icon_pause)
 
-                    controllerViewAnimation = controllerView.animate()
-                        .setStartDelay(2500L)
-                        .withStartAction {
-                            controllerView.visibility = View.VISIBLE
+                    controllerViewAnimation = viewHolder?.controllerView?.animate()
+                        ?.setStartDelay(2500L)
+                        ?.withStartAction {
+                            viewHolder?.controllerView?.visibility = View.VISIBLE
                         }
-                        .withEndAction {
-                            controllerView.visibility = View.INVISIBLE
+                        ?.withEndAction {
+                            viewHolder?.controllerView?.visibility = View.INVISIBLE
                         }
                     controllerViewAnimation?.start()
                 } else {
-                    playOrPauseButton.setIconResource(R.drawable.exo_icon_play)
+                    viewHolder?.playOrPauseButton?.setIconResource(R.drawable.exo_icon_play)
                 }
             }
 
@@ -615,26 +556,11 @@ class CinemaDialogFragment private constructor(
      * [CinemaDialogFragmentListener] implementation
      */
 
-    override fun onTrackViewPosition(view: View) {
-        onTrackViewPosition(ViewPosition.from(view))
-    }
-
-    override fun onTrackViewPosition(viewPosition: ViewPosition) {
-        if (this::gestureFrameLayout.isInitialized) {
-            if (gestureFrameLayout.positionAnimator.position > 0f) {
-                gestureFrameLayout.positionAnimator.update(viewPosition)
-            }
-        }
-    }
-
-    override fun setScreenView(view: View): CinemaDialogFragment {
+    override fun setScreenView(view: View?): CinemaDialogFragment {
         this.screenView = view
         return this
     }
 
-    interface Callback {
-        fun onMovieShow(delay: Long = 0L)
-        fun onMovieHide(delay: Long = 0L)
-    }
+    interface Callback
 
 }

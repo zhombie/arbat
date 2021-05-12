@@ -3,19 +3,18 @@ package kz.zhombie.arbat
 import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
-import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.HandlerCompat
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
 import kz.zhombie.cinema.CinemaDialogFragment
+import kz.zhombie.cinema.model.Movie
 import kz.zhombie.museum.MuseumDialogFragment
 import kz.zhombie.museum.model.Painting
 import kz.zhombie.radio.Radio
@@ -155,23 +154,9 @@ class MainActivity : AppCompatActivity() {
             dialogFragment?.dismiss()
             dialogFragment = null
             dialogFragment = CinemaDialogFragment.Builder()
+                .setMovie(Movie(Uri.parse(VIDEO_URL), Movie.Info("Video", "Subtitle")))
                 .setScreenView(it)
-                .setUri(Uri.parse(VIDEO_URL))
-                .setTitle("Video")
-                .setSubtitle("Subtitle")
-                .setStartViewPosition(it)
                 .setFooterViewEnabled(true)
-                .setCallback(object : CinemaDialogFragment.Callback {
-                    override fun onMovieShow(delay: Long) {
-                        HandlerCompat.createAsync(Looper.getMainLooper())
-                            .postDelayed({ it.visibility = View.VISIBLE }, delay)
-                    }
-
-                    override fun onMovieHide(delay: Long) {
-                        HandlerCompat.createAsync(Looper.getMainLooper())
-                            .postDelayed({ it.visibility = View.INVISIBLE }, delay)
-                    }
-                })
                 .show(supportFragmentManager)
         }
     }
