@@ -149,6 +149,8 @@ class MuseumDialogFragment private constructor(
 
     private var isPaintingShowCalled: Boolean = false
 
+    private var isOverlayViewVisible: Boolean = true
+
     // -------------------------------------------------
 
     private var delegate: RecyclerViewTransitionDelegate? = null
@@ -261,8 +263,52 @@ class MuseumDialogFragment private constructor(
     }
 
     private fun setupViewPager() = viewHolder?.let { viewHolder ->
-        viewPagerAdapter = ViewPagerAdapter(viewHolder.viewPager, Settings.getPaintingLoader())
+        viewPagerAdapter = ViewPagerAdapter(viewHolder.viewPager, Settings.getPaintingLoader()) {
+            if (isOverlayViewVisible) {
+                viewHolder.toolbar.animate()
+                    .alpha(0.0F)
+                    .setDuration(100L)
+                    .withEndAction {
+                        viewHolder.toolbar.visibility = View.INVISIBLE
+                    }
+                    .start()
+
+                if (params?.isFooterViewEnabled == true) {
+                    viewHolder.footerView.animate()
+                        .alpha(0.0F)
+                        .setDuration(100L)
+                        .withEndAction {
+                            viewHolder.footerView.visibility = View.INVISIBLE
+                        }
+                        .start()
+                }
+
+                isOverlayViewVisible = false
+            } else {
+                viewHolder.toolbar.animate()
+                    .alpha(1.0F)
+                    .setDuration(100L)
+                    .withStartAction {
+                        viewHolder.toolbar.visibility = View.VISIBLE
+                    }
+                    .start()
+
+                if (params?.isFooterViewEnabled == true) {
+                    viewHolder.footerView.animate()
+                        .alpha(1.0F)
+                        .setDuration(100L)
+                        .withStartAction {
+                            viewHolder.footerView.visibility = View.VISIBLE
+                        }
+                        .start()
+                }
+
+                isOverlayViewVisible = true
+            }
+        }
+
         viewPagerAdapter?.paintings = params?.paintings ?: emptyList()
+
         viewHolder.viewPager.offscreenPageLimit = min(params?.paintings?.size ?: 3, 3)
 
         val viewPagerListener = object : SimpleOnPageChangeListener() {
@@ -274,6 +320,7 @@ class MuseumDialogFragment private constructor(
         viewHolder.viewPager.addOnPageChangeListener(viewPagerListener)
 
         viewHolder.viewPager.setPageTransformer(true, DepthPageTransformer())
+
         viewHolder.viewPager.adapter = viewPagerAdapter
     }
 

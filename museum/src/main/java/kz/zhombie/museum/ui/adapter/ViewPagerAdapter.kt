@@ -14,7 +14,8 @@ import kz.zhombie.museum.model.Painting
 
 internal class ViewPagerAdapter constructor(
     private val viewPager: ViewPager,
-    private val paintingLoader: PaintingLoader
+    private val paintingLoader: PaintingLoader,
+    private val callback: () -> Unit
 ) : RecyclePagerAdapter<RecyclePagerAdapter.ViewHolder>() {
 
     companion object {
@@ -110,6 +111,8 @@ internal class ViewPagerAdapter constructor(
                 .setRotationEnabled(false)
                 .setRestrictRotation(true)
                 .isZoomEnabled = true
+
+            gestureImageView.setOnClickListener { callback() }
         }
     }
 
