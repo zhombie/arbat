@@ -210,11 +210,11 @@ internal class RadioStation private constructor(
     }
 
     /**
-     * [Player.EventListener] implementation
+     * [Player.Listener] implementation
      */
 
     private val eventListener by lazy {
-        object : Player.EventListener {
+        object : Player.Listener {
             override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                 super.onTimelineChanged(timeline, reason)
                 Logger.debug(TAG, "onTimelineChanged() -> timeline: $timeline, reason: $reason")
@@ -293,6 +293,15 @@ internal class RadioStation private constructor(
             override fun onPositionDiscontinuity(reason: Int) {
                 super.onPositionDiscontinuity(reason)
                 Logger.debug(TAG, "onPositionDiscontinuity() -> reason: $reason")
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int
+            ) {
+                super.onPositionDiscontinuity(oldPosition, newPosition, reason)
+                Logger.debug(TAG, "onPositionDiscontinuity() -> oldPosition: $oldPosition, newPosition: $newPosition, reason: $reason")
             }
 
             override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {

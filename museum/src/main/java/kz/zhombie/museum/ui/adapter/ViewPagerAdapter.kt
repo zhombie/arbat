@@ -3,30 +3,24 @@ package kz.zhombie.museum.ui.adapter
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.viewpager.widget.ViewPager
+import androidx.recyclerview.widget.RecyclerView
+import com.alexvasilkov.gestures.GestureController.OnStateChangeListener
 import com.alexvasilkov.gestures.Settings
-import com.alexvasilkov.gestures.commons.RecyclePagerAdapter
+import com.alexvasilkov.gestures.State
 import com.alexvasilkov.gestures.views.GestureImageView
 import kz.zhombie.museum.PaintingLoader
 import kz.zhombie.museum.R
 import kz.zhombie.museum.logging.Logger
 import kz.zhombie.museum.model.Painting
+import kotlin.math.max
 
 internal class ViewPagerAdapter constructor(
-    private val viewPager: ViewPager,
     private val paintingLoader: PaintingLoader,
     private val callback: () -> Unit
-) : RecyclePagerAdapter<RecyclePagerAdapter.ViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
         private val TAG = ViewPagerAdapter::class.java.simpleName
-
-        fun getImageView(holder: RecyclePagerAdapter.ViewHolder): GestureImageView? {
-            if (holder is ViewHolder) {
-                return holder.gestureImageView
-            }
-            return null
-        }
     }
 
     var paintings: List<Painting> = emptyList()
@@ -34,6 +28,8 @@ internal class ViewPagerAdapter constructor(
             field = value
             notifyDataSetChanged()
         }
+
+    private var recyclerView: RecyclerView? = null
 
     private var isActivated = false
 
@@ -48,7 +44,20 @@ internal class ViewPagerAdapter constructor(
         return paintings[position]
     }
 
-    override fun getCount(): Int {
+    fun getImageView(position: Int): GestureImageView? {
+        val holder = recyclerView?.findViewHolderForLayoutPosition(position)
+        return if (holder is ViewHolder) holder.gestureImageView else null
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = recyclerView
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = null
+    }
+
+    override fun getItemCount(): Int {
         return if (isActivated || !paintings.isNullOrEmpty()) {
             paintings.size
         } else {
@@ -56,17 +65,18 @@ internal class ViewPagerAdapter constructor(
         }
     }
 
-    override fun onCreateViewHolder(container: ViewGroup): RecyclePagerAdapter.ViewHolder {
-        val holder = ViewHolder(container)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val holder = ViewHolder(parent)
 
         // Enabling smooth scrolling when image panning turns into ViewPager scrolling.
         // Otherwise ViewPager scrolling will only be possible when image is in zoomed out state.
-        holder.gestureImageView.controller.enableScrollInViewPager(viewPager)
+        val controller = holder.gestureImageView.controller
+        controller.addOnStateChangeListener(DynamicZoom(controller.settings))
 
         return holder
     }
 
-    override fun onBindViewHolder(holder: RecyclePagerAdapter.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is ViewHolder) {
             paintingLoader.loadFullscreenImage(
                 context = holder.itemView.context,
@@ -76,7 +86,7 @@ internal class ViewPagerAdapter constructor(
         }
     }
 
-    override fun onRecycleViewHolder(holder: RecyclePagerAdapter.ViewHolder) {
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         if (holder is ViewHolder) {
             paintingLoader.dispose(holder.gestureImageView)
         }
@@ -84,7 +94,7 @@ internal class ViewPagerAdapter constructor(
 
     private inner class ViewHolder constructor(
         container: ViewGroup
-    ) : RecyclePagerAdapter.ViewHolder(
+    ) : RecyclerView.ViewHolder(
         LayoutInflater.from(container.context)
             .inflate(R.layout.museum_cell_image, container, false)
     ) {
@@ -113,6 +123,23 @@ internal class ViewPagerAdapter constructor(
                 .isZoomEnabled = true
 
             gestureImageView.setOnClickListener { callback() }
+        }
+    }
+
+    // Dynamically set double tap zoom level to fill the viewport
+    private class DynamicZoom constructor(private val settings: Settings) : OnStateChangeListener {
+        override fun onStateChanged(state: State?) {
+            updateZoomLevels()
+        }
+
+        override fun onStateReset(oldState: State?, newState: State?) {
+            updateZoomLevels()
+        }
+
+        private fun updateZoomLevels() {
+            val scaleX = settings.viewportW.toFloat() / settings.imageW
+            val scaleY = settings.viewportH.toFloat() / settings.imageH
+            settings.doubleTapZoom = max(scaleX, scaleY)
         }
     }
 

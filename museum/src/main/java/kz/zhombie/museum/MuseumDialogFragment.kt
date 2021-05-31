@@ -8,10 +8,8 @@ import android.widget.ImageView
 import androidx.core.os.HandlerCompat
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager.widget.ViewPager
-import androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener
+import androidx.viewpager2.widget.ViewPager2
 import com.alexvasilkov.gestures.commons.DepthPageTransformer
-import com.alexvasilkov.gestures.commons.RecyclePagerAdapter
 import com.alexvasilkov.gestures.transition.GestureTransitions
 import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator
 import com.alexvasilkov.gestures.transition.tracker.SimpleTracker
@@ -263,7 +261,7 @@ class MuseumDialogFragment private constructor(
     }
 
     private fun setupViewPager() = viewHolder?.let { viewHolder ->
-        viewPagerAdapter = ViewPagerAdapter(viewHolder.viewPager, Settings.getPaintingLoader()) {
+        viewPagerAdapter = ViewPagerAdapter(Settings.getPaintingLoader()) {
             if (isOverlayViewVisible) {
                 viewHolder.toolbar.animate()
                     .alpha(0.0F)
@@ -311,15 +309,15 @@ class MuseumDialogFragment private constructor(
 
         viewHolder.viewPager.offscreenPageLimit = min(params?.paintings?.size ?: 3, 3)
 
-        val viewPagerListener = object : SimpleOnPageChangeListener() {
+        val viewPagerListener = object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 val painting = viewPagerAdapter?.getItem(position)
                 setPaintingInfo(painting)
             }
         }
-        viewHolder.viewPager.addOnPageChangeListener(viewPagerListener)
+        viewHolder.viewPager.registerOnPageChangeCallback(viewPagerListener)
 
-        viewHolder.viewPager.setPageTransformer(true, DepthPageTransformer())
+        viewHolder.viewPager.setPageTransformer(DepthPageTransformer())
 
         viewHolder.viewPager.adapter = viewPagerAdapter
     }
@@ -327,8 +325,7 @@ class MuseumDialogFragment private constructor(
     private fun setupViewTransitionAnimator() = viewHolder?.let { viewHolder ->
         val viewPagerTracker: SimpleTracker = object : SimpleTracker() {
             override fun getViewAt(position: Int): View? {
-                val holder: RecyclePagerAdapter.ViewHolder? = viewPagerAdapter?.getViewHolder(position)
-                return if (holder == null) null else ViewPagerAdapter.getImageView(holder)
+                return viewPagerAdapter?.getImageView(position)
             }
         }
 
@@ -373,7 +370,7 @@ class MuseumDialogFragment private constructor(
     }
 
     /**
-     * Applying [ViewPager] image animation state: fading out toolbar, title and background.
+     * Applying [ViewPager2] image animation state: fading out toolbar, title and background.
      */
     private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) = viewHolder?.let { viewHolder ->
         Logger.debug(TAG, "applyFullPagerState() -> $position, $isLeaving")
