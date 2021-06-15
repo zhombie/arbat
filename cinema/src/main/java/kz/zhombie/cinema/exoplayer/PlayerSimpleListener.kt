@@ -1,4 +1,4 @@
-package kz.zhombie.cinema
+package kz.zhombie.cinema.exoplayer
 
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
@@ -10,10 +10,10 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.video.VideoSize
 import kz.zhombie.cinema.logging.Logger
 
-internal abstract class AbstractListener : Player.Listener {
+internal open class PlayerSimpleListener : Player.Listener {
 
     companion object {
-        private val TAG = AbstractListener::class.java.simpleName
+        private val TAG = PlayerSimpleListener::class.java.simpleName
     }
 
     /**

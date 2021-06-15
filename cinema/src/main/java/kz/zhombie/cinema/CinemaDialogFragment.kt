@@ -14,6 +14,7 @@ import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
+import kz.zhombie.cinema.exoplayer.PlayerSimpleListener
 import kz.zhombie.cinema.logging.Logger
 import kz.zhombie.cinema.model.Movie
 import kz.zhombie.cinema.model.Params
@@ -441,7 +442,7 @@ class CinemaDialogFragment private constructor(
      */
 
     private val eventListener by lazy {
-        object : AbstractListener() {
+        object : PlayerSimpleListener() {
             override fun onPlaybackStateChanged(state: Int) {
                 super.onPlaybackStateChanged(state)
 

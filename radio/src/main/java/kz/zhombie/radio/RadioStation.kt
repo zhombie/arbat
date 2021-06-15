@@ -12,6 +12,8 @@ import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
+import kz.zhombie.radio.exoplayer.PlayerSimpleListener
+import kz.zhombie.radio.logging.Logger
 
 internal class RadioStation private constructor(
     private val context: Context,
@@ -211,7 +213,7 @@ internal class RadioStation private constructor(
      */
 
     private val eventListener by lazy {
-        object : AbstractListener() {
+        object : PlayerSimpleListener() {
             override fun onIsLoadingChanged(isLoading: Boolean) {
                 super.onIsLoadingChanged(isLoading)
                 listener?.onIsSourceLoadingChanged(isLoading)

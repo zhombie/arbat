@@ -1,6 +1,7 @@
-package kz.zhombie.radio
+package kz.zhombie.radio.logging
 
 import android.util.Log
+import kz.zhombie.radio.Settings
 
 internal object Logger {
     private const val TAG = "Radio"
