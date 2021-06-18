@@ -41,6 +41,8 @@ class MuseumDialogFragment private constructor(
     }
 
     class Builder {
+        private var tag: String? = null
+
         private var paintingLoader: PaintingLoader? = null
 
         private var paintings: List<Painting>? = null
@@ -54,6 +56,11 @@ class MuseumDialogFragment private constructor(
         private var isFooterViewEnabled: Boolean? = null
 
         private var callback: Callback? = null
+
+        fun setTag(tag: String): Builder {
+            this.tag = tag
+            return this
+        }
 
         fun setPaintingLoader(paintingLoader: PaintingLoader): Builder {
             this.paintingLoader = paintingLoader
@@ -123,7 +130,7 @@ class MuseumDialogFragment private constructor(
         fun show(fragmentManager: FragmentManager): MuseumDialogFragment {
             val fragment = build()
             fragment.isCancelable = true
-            fragment.show(fragmentManager, null)
+            fragment.show(fragmentManager, tag)
             return fragment
         }
     }
@@ -309,13 +316,12 @@ class MuseumDialogFragment private constructor(
 
         viewHolder.viewPager.offscreenPageLimit = min(params?.paintings?.size ?: 3, 3)
 
-        val viewPagerListener = object : ViewPager2.OnPageChangeCallback() {
+        viewHolder.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 val painting = viewPagerAdapter?.getItem(position)
                 setPaintingInfo(painting)
             }
-        }
-        viewHolder.viewPager.registerOnPageChangeCallback(viewPagerListener)
+        })
 
         viewHolder.viewPager.setPageTransformer(DepthPageTransformer())
 

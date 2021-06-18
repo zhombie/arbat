@@ -39,10 +39,17 @@ class CinemaDialogFragment private constructor(
     }
 
     class Builder {
+        private var tag: String? = null
+
         private var movie: Movie? = null
         private var screenView: View? = null
         private var isFooterViewEnabled: Boolean = false
         private var callback: Callback? = null
+
+        fun setTag(tag: String): Builder {
+            this.tag = tag
+            return this
+        }
 
         fun setMovie(movie: Movie): Builder {
             this.movie = movie
@@ -80,7 +87,7 @@ class CinemaDialogFragment private constructor(
         fun show(fragmentManager: FragmentManager): CinemaDialogFragment {
             val fragment = build()
             fragment.isCancelable = true
-            fragment.show(fragmentManager, null)
+            fragment.show(fragmentManager, tag)
             return fragment
         }
     }
