@@ -206,11 +206,7 @@ class MuseumDialogFragment private constructor(
 
             Logger.debug(TAG, "startPosition: $startPosition")
 
-            if (recyclerView != null) {
-                viewsTransitionAnimator?.enter(startPosition, true)
-            } else {
-                viewsTransitionAnimator?.enter(0, true)
-            }
+            viewsTransitionAnimator?.enter(startPosition, true)
         }
     }
 
