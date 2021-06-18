@@ -26,7 +26,7 @@ ext.projectArtifactId = { project ->
 
 allprojects {
     group = 'com.github.zhombie.arbat'
-    version = '1.2.5'
+    version = '1.2.6'
     project.ext.artifactId = rootProject.ext.projectArtifactId(project)
 
     repositories {
