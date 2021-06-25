@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.View
 import android.widget.ImageView
 import androidx.core.os.HandlerCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -132,6 +133,20 @@ class MuseumDialogFragment private constructor(
             fragment.isCancelable = true
             fragment.show(fragmentManager, tag)
             return fragment
+        }
+
+        fun dismissPrevious(fragmentManager: FragmentManager): Fragment? {
+            val fragment = fragmentManager.findFragmentByTag(TAG)
+            if (fragment is MuseumDialogFragment) {
+                fragment.dismiss()
+            }
+            return fragment
+        }
+
+        fun showSafely(fragmentManager: FragmentManager): MuseumDialogFragment {
+            dismissPrevious(fragmentManager)
+            setTag(TAG)
+            return show(fragmentManager)
         }
     }
 

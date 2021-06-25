@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.Looper
 import android.view.*
 import androidx.core.os.HandlerCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.alexvasilkov.gestures.transition.GestureTransitions
 import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator
@@ -89,6 +90,20 @@ class CinemaDialogFragment private constructor(
             fragment.isCancelable = true
             fragment.show(fragmentManager, tag)
             return fragment
+        }
+
+        fun dismissPrevious(fragmentManager: FragmentManager): Fragment? {
+            val fragment = fragmentManager.findFragmentByTag(TAG)
+            if (fragment is CinemaDialogFragment) {
+                fragment.dismiss()
+            }
+            return fragment
+        }
+
+        fun showSafely(fragmentManager: FragmentManager): CinemaDialogFragment {
+            dismissPrevious(fragmentManager)
+            setTag(TAG)
+            return show(fragmentManager)
         }
     }
 
