@@ -2,4 +2,4 @@ include ':cinema'
 include ':museum'
 include ':radio'
 include ':sample'
-rootProject.name = "Arbat"
+rootProject.name = 'Arbat'
