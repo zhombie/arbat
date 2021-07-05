@@ -4,27 +4,47 @@ import kz.zhombie.museum.exception.PaintingLoaderNullException
 
 internal object Settings {
 
-    private var paintingLoader: PaintingLoader? = null
+    private var permanentPaintingLoader: PaintingLoader? = null
+    private var temporaryPaintingLoader: PaintingLoader? = null
     private var isLoggingEnabled: Boolean = false
 
-    fun hasPaintingLoader(): Boolean {
-        return paintingLoader != null
+    fun getPaintingLoader(): PaintingLoader =
+        getTemporaryPaintingLoader() ?: getPermanentPaintingLoader()
+
+    fun hasPermanentPaintingLoader(): Boolean =
+        permanentPaintingLoader != null
+
+    fun getPermanentPaintingLoader(): PaintingLoader =
+        requireNotNull(permanentPaintingLoader) { PaintingLoaderNullException() }
+
+    fun setPermanentPaintingLoader(paintingLoader: PaintingLoader) {
+        this.permanentPaintingLoader = paintingLoader
     }
 
-    fun getPaintingLoader(): PaintingLoader {
-        return requireNotNull(paintingLoader) { PaintingLoaderNullException() }
+    fun hasTemporaryPaintingLoader(): Boolean =
+        temporaryPaintingLoader != null
+
+    fun getTemporaryPaintingLoader(): PaintingLoader? =
+        temporaryPaintingLoader
+
+    fun setTemporaryPaintingLoader(paintingLoader: PaintingLoader) {
+        this.temporaryPaintingLoader = paintingLoader
     }
 
-    fun setPaintingLoader(paintingLoader: PaintingLoader) {
-        this.paintingLoader = paintingLoader
-    }
-
-    fun isLoggingEnabled(): Boolean {
-        return isLoggingEnabled
-    }
+    fun isLoggingEnabled(): Boolean = isLoggingEnabled
 
     fun setLoggingEnabled(isLoggingEnabled: Boolean) {
         this.isLoggingEnabled = isLoggingEnabled
+    }
+
+    fun cleanupTemporarySettings() {
+        temporaryPaintingLoader = null
+    }
+
+    fun cleanupSettings() {
+        permanentPaintingLoader = null
+        temporaryPaintingLoader = null
+        isLoggingEnabled = false
     }
 
 }

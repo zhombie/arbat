@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
@@ -53,8 +52,6 @@ class MainActivity : AppCompatActivity() {
     private var playOrPauseButton: MaterialButton? = null
 
     private var imageLoader: CoilImageLoader? = null
-
-    private var dialogFragment: DialogFragment? = null
 
     private var radio: Radio? = null
 
@@ -106,13 +103,11 @@ class MainActivity : AppCompatActivity() {
         imageLoader?.loadSmallImage(this, requireNotNull(imageView), singleImageUri)
 
         imageView?.setOnClickListener {
-            dialogFragment?.dismiss()
-            dialogFragment = null
-            dialogFragment = MuseumDialogFragment.Builder()
+            MuseumDialogFragment.Builder()
                 .setPainting(Painting(singleImageUri, Painting.Info("Title", "Subtitle")))
                 .setImageView(imageView)
                 .setFooterViewEnabled(true)
-                .show(supportFragmentManager)
+                .showSafely(supportFragmentManager)
         }
 
         // ----------------------------------------------------------------------------------------
@@ -121,9 +116,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView?.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
 
         val adapter = ImagesAdapter(requireNotNull(imageLoader)) { position ->
-            dialogFragment?.dismiss()
-            dialogFragment = null
-            dialogFragment = MuseumDialogFragment.Builder()
+            MuseumDialogFragment.Builder()
                 .setPaintings(
                     imageUris.mapIndexed { index, uri ->
                         Painting(
@@ -140,7 +133,7 @@ class MainActivity : AppCompatActivity() {
                         return ImagesAdapter.getImageView(holder)
                     }
                 })
-                .show(supportFragmentManager)
+                .showSafely(supportFragmentManager)
         }
 
         adapter.images = imageUris
@@ -151,13 +144,11 @@ class MainActivity : AppCompatActivity() {
         imageLoader?.loadSmallImage(this, requireNotNull(videoView), Uri.parse(VIDEO_THUMBNAIL_URL))
 
         videoView?.setOnClickListener {
-            dialogFragment?.dismiss()
-            dialogFragment = null
-            dialogFragment = CinemaDialogFragment.Builder()
+            CinemaDialogFragment.Builder()
                 .setMovie(Movie(Uri.parse(VIDEO_URL), Movie.Info("Video", "Subtitle")))
                 .setScreenView(it)
                 .setFooterViewEnabled(true)
-                .show(supportFragmentManager)
+                .showSafely(supportFragmentManager)
         }
     }
 

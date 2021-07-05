@@ -30,7 +30,7 @@ class MuseumDialogFragment private constructor(
         private val TAG: String = MuseumDialogFragment::class.java.simpleName
 
         fun init(paintingLoader: PaintingLoader, isLoggingEnabled: Boolean) {
-            Settings.setPaintingLoader(paintingLoader)
+            Settings.setPermanentPaintingLoader(paintingLoader)
             Settings.setLoggingEnabled(isLoggingEnabled)
         }
 
@@ -117,7 +117,9 @@ class MuseumDialogFragment private constructor(
                     isFooterViewEnabled = isFooterViewEnabled
                 )
             ).apply {
-                Settings.setPaintingLoader(this@Builder.paintingLoader ?: Settings.getPaintingLoader())
+                this@Builder.paintingLoader?.let {
+                    Settings.setTemporaryPaintingLoader(it)
+                }
 
                 setImageView(this@Builder.imageView)
 
@@ -269,6 +271,8 @@ class MuseumDialogFragment private constructor(
         viewHolder = null
 
         params = null
+
+        Settings.cleanupTemporarySettings()
 
         callback?.onDestroy()
         callback = null
