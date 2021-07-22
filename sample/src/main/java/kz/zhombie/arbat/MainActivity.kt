@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity() {
 
         imageView?.setOnClickListener {
             MuseumDialogFragment.Builder()
+//                .setPaintingLoader(imageLoader ?: return@setOnClickListener)
                 .setPainting(Painting(singleImageUri, Painting.Info("Title", "Subtitle")))
                 .setImageView(imageView)
                 .setFooterViewEnabled(true)
