@@ -56,7 +56,7 @@
             android:minWidth="0dp"
             android:padding="10dp"
             android:text="@null"
-            app:icon="@drawable/exo_icon_play"
+            app:icon="@drawable/cinema_ic_play"
             app:iconGravity="textEnd"
             app:iconPadding="0dp"
             app:iconSize="32.5dp"

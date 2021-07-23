@@ -496,7 +496,7 @@ class CinemaDialogFragment private constructor(
                 super.onIsPlayingChanged(isPlaying)
 
                 if (isPlaying) {
-                    viewHolder?.playOrPauseButton?.setIconResource(R.drawable.exo_icon_pause)
+                    viewHolder?.playOrPauseButton?.setIconResource(R.drawable.cinema_ic_pause)
 
                     controllerViewAnimation = viewHolder?.controllerView?.animate()
                         ?.setStartDelay(2500L)
@@ -508,7 +508,7 @@ class CinemaDialogFragment private constructor(
                         }
                     controllerViewAnimation?.start()
                 } else {
-                    viewHolder?.playOrPauseButton?.setIconResource(R.drawable.exo_icon_play)
+                    viewHolder?.playOrPauseButton?.setIconResource(R.drawable.cinema_ic_play)
                 }
             }
 
