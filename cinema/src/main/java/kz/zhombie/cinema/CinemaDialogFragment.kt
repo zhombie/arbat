@@ -512,7 +512,7 @@ class CinemaDialogFragment private constructor(
                 }
             }
 
-            override fun onPlayerError(error: ExoPlaybackException) {
+            override fun onPlayerError(error: PlaybackException) {
                 super.onPlayerError(error)
 
                 error.printStackTrace()

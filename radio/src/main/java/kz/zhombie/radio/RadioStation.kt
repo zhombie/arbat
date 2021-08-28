@@ -242,7 +242,7 @@ internal class RadioStation private constructor(
                 listener?.onIsPlayingStateChanged(isPlaying)
             }
 
-            override fun onPlayerError(error: ExoPlaybackException) {
+            override fun onPlayerError(error: PlaybackException) {
                 super.onPlayerError(error)
                 listener?.onPlayerError(error.cause)
             }
