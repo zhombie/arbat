@@ -5,13 +5,14 @@ import android.graphics.Bitmap
 import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
 import coil.ImageLoader
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
-import coil.decode.SvgDecoder
 import coil.decode.VideoFrameDecoder
 import coil.fetch.VideoFrameFileFetcher
 import coil.fetch.VideoFrameUriFetcher
@@ -27,7 +28,10 @@ import coil.util.DebugLogger
 import kz.zhombie.museum.PaintingLoader
 import kz.zhombie.museum.component.CircularProgressDrawable
 
-class CoilImageLoader constructor(private val context: Context) : PaintingLoader {
+class CoilImageLoader constructor(
+    private val context: Context,
+    private val isGlobalInstance: Boolean = true
+) : PaintingLoader, LifecycleObserver {
 
     companion object {
         private val TAG = CoilImageLoader::class.java.simpleName
@@ -35,6 +39,8 @@ class CoilImageLoader constructor(private val context: Context) : PaintingLoader
 
     private val imageLoader by lazy {
         ImageLoader.Builder(context)
+            .allowHardware(true)
+            .availableMemoryPercentage(0.25)
             .componentRegistry {
                 // Video frame
                 add(VideoFrameFileFetcher(context))
@@ -47,9 +53,6 @@ class CoilImageLoader constructor(private val context: Context) : PaintingLoader
                 } else {
                     add(GifDecoder())
                 }
-
-                // SVG
-                add(SvgDecoder(context))
             }
             .crossfade(false)
             .diskCachePolicy(CachePolicy.ENABLED)
@@ -62,11 +65,12 @@ class CoilImageLoader constructor(private val context: Context) : PaintingLoader
         try {
             CoilUtils.createDefaultCache(context)
         } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }
 
-    private val hashMap = hashMapOf<ImageView, Disposable>()
+    private var hashMap: HashMap<ImageView, Disposable>? = null
 
     private val circularProgressDrawable by lazy {
         val it = CircularProgressDrawable(context)
@@ -79,12 +83,18 @@ class CoilImageLoader constructor(private val context: Context) : PaintingLoader
         it
     }
 
-    override fun loadSmallImage(context: Context, imageView: ImageView, uri: Uri) {
-        Log.d(TAG, "loadSmallImage() -> imageView: $imageView")
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    fun onDestroy() {
+        Logger.debug(TAG, "onDestroy()")
+        clearCache()
+    }
 
-        val request = ImageRequest.Builder(context)
+    override fun loadSmallImage(context: Context, imageView: ImageView, uri: Uri) {
+        Logger.debug(TAG, "loadSmallImage() -> imageView: $imageView")
+
+        ImageRequest.Builder(context)
             .bitmapConfig(Bitmap.Config.ARGB_8888)
-            .crossfade(false)
+            .crossfade(true)
             .data(uri)
             .error(R.drawable.museum_bg_black)
 //            .placeholder(R.drawable.museum_bg_black)
@@ -93,12 +103,11 @@ class CoilImageLoader constructor(private val context: Context) : PaintingLoader
             .size(300, 300)
             .target(imageView)
             .build()
-
-        imageLoader.enqueue(request)
+            .hashMap(imageView)
     }
 
     override fun loadFullscreenImage(context: Context, imageView: ImageView, uri: Uri) {
-        Log.d(TAG, "loadFullscreenImage() -> imageView: $imageView")
+        Logger.debug(TAG, "loadFullscreenImage() -> imageView: $imageView")
 
         fun startProgress() {
             if (!circularProgressDrawable.isRunning) {
@@ -112,7 +121,7 @@ class CoilImageLoader constructor(private val context: Context) : PaintingLoader
             }
         }
 
-        val request = ImageRequest.Builder(context)
+        ImageRequest.Builder(context)
             .bitmapConfig(Bitmap.Config.ARGB_8888)
             .crossfade(false)
             .data(uri)
@@ -123,42 +132,65 @@ class CoilImageLoader constructor(private val context: Context) : PaintingLoader
             .size(ViewSizeResolver(imageView))
             .listener(
                 onStart = {
-                    Log.d(TAG, "onStart()")
+                    Logger.debug(TAG, "onStart()")
                     startProgress()
                 },
                 onCancel = {
-                    Log.d(TAG, "onCancel()")
+                    Logger.debug(TAG, "onCancel()")
                     stopProgress()
                 },
                 onError = { _, throwable ->
-                    Log.d(TAG, "onError() -> throwable: $throwable")
+                    Logger.debug(TAG, "onError() -> throwable: $throwable")
                     stopProgress()
                 },
                 onSuccess = { _, metadata: ImageResult.Metadata ->
-                    Log.d(TAG, "onError() -> metadata: $metadata")
+                    Logger.debug(TAG, "onError() -> metadata: $metadata")
                     stopProgress()
                 },
             )
             .target(imageView)
             .build()
+            .hashMap(imageView)
+    }
 
-        hashMap[imageView] = imageLoader.enqueue(request)
+    private fun ImageRequest.hashMap(imageView: ImageView) {
+        if (isGlobalInstance) {
+            imageLoader.enqueue(this)
+        } else {
+            if (hashMap == null) {
+                hashMap = hashMapOf()
+            }
+            if (hashMap?.isNotEmpty() == true) {
+                if ((hashMap?.size ?: 0) > 50) {
+                    hashMap?.remove(hashMap?.entries?.first()?.key)
+                }
+            }
+            hashMap?.set(imageView, imageLoader.enqueue(this))
+        }
     }
 
     override fun dispose(imageView: ImageView) {
-        Log.d(TAG, "dispose() -> imageView: $imageView")
+        Logger.debug(TAG, "dispose() -> imageView: $imageView")
 
-        if (hashMap[imageView] != null && hashMap[imageView]?.isDisposed == false) {
-            hashMap[imageView]?.dispose()
+        if (isGlobalInstance) {
+            imageView.setImageDrawable(null)
+        } else {
+            if (hashMap == null) {
+                imageView.setImageDrawable(null)
+            } else {
+                if (hashMap?.get(imageView) != null && hashMap?.get(imageView)?.isDisposed == false) {
+                    hashMap?.get(imageView)?.dispose()
+                }
+
+                hashMap?.remove(imageView)
+
+                imageView.setImageDrawable(null)
+            }
         }
-
-        hashMap.remove(imageView)
-
-        imageView.setImageDrawable(null)
     }
 
     fun clearCache() {
-        Log.d(TAG, "clearCache()")
+        Logger.debug(TAG, "clearCache()")
 
         try {
             cache?.directory()?.deleteRecursively()
@@ -167,8 +199,12 @@ class CoilImageLoader constructor(private val context: Context) : PaintingLoader
         }
 
         circularProgressDrawable.stop()
+
         imageLoader.memoryCache.clear()
-        hashMap.clear()
+
+        hashMap?.forEach { dispose(it.key) }
+        hashMap?.clear()
+        hashMap = null
     }
 
 }

@@ -6,21 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import kz.zhombie.museum.ViewHolderDelegate
 
 class ImagesAdapter constructor(
     private val imageLoader: CoilImageLoader,
     private val callback: (position: Int) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-    companion object {
-        fun getImageView(holder: RecyclerView.ViewHolder): ImageView? {
-            return if (holder is ViewHolder) {
-                holder.imageView
-            } else {
-                null
-            }
-        }
-    }
 
     var images: List<Uri> = emptyList()
         set(value) {
@@ -43,8 +34,15 @@ class ImagesAdapter constructor(
         }
     }
 
-    private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imageView: ImageView = view.findViewById(R.id.imageView)
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        super.onViewRecycled(holder)
+        if (holder is ViewHolderDelegate) {
+            holder.getImageView()?.let { imageLoader.dispose(it) }
+        }
+    }
+
+    private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view), ViewHolderDelegate {
+        private val imageView: ImageView = view.findViewById(R.id.imageView)
 
         init {
             imageView.setOnClickListener(::onImageClick)
@@ -54,6 +52,10 @@ class ImagesAdapter constructor(
             imageLoader.loadSmallImage(itemView.context, imageView, image)
 
             imageView.setTag(R.id.museum_tag_selected_image, image)
+        }
+
+        override fun getImageView(): ImageView {
+            return imageView
         }
 
         private fun onImageClick(view: View) {

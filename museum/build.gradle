@@ -52,7 +52,7 @@ dependencies {
     implementation 'androidx.viewpager2:viewpager2:1.1.0-beta01'
 
     // Gesture views
-    api 'com.alexvasilkov:gesture-views:2.8.1'
+    api 'com.alexvasilkov:gesture-views:2.8.2'
 
     // Material components
     implementation 'com.google.android.material:material:1.4.0'

@@ -34,6 +34,10 @@ class MuseumDialogFragment private constructor(
             Settings.setLoggingEnabled(isLoggingEnabled)
         }
 
+        fun clear() {
+            Settings.cleanupSettings()
+        }
+
         private fun newInstance(params: Params): MuseumDialogFragment {
             val fragment = MuseumDialogFragment()
             fragment.arguments = BundleManager.build(params)
@@ -82,6 +86,8 @@ class MuseumDialogFragment private constructor(
             return this
         }
 
+        // TODO: Update code, in order to fix memory leak
+        @Deprecated("Causes memory leak, that's why avoid usage of this method")
         fun setRecyclerView(recyclerView: RecyclerView?): Builder {
             this.recyclerView = recyclerView
             return this
@@ -248,10 +254,10 @@ class MuseumDialogFragment private constructor(
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        super.onDestroyView()
 
-        Logger.debug(TAG, "onDestroy()")
+        Logger.debug(TAG, "onDestroyView()")
 
         if (!isPaintingShowCalled) {
             isPaintingShowCalled = true
@@ -269,10 +275,18 @@ class MuseumDialogFragment private constructor(
         recyclerView = null
 
         viewHolder = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        Logger.debug(TAG, "onDestroy()")
 
         params = null
 
         Settings.cleanupTemporarySettings()
+
+        delegate = null
 
         callback?.onDestroy()
         callback = null

@@ -15,6 +15,7 @@ import com.google.android.material.textview.MaterialTextView
 import kz.zhombie.cinema.CinemaDialogFragment
 import kz.zhombie.cinema.model.Movie
 import kz.zhombie.museum.MuseumDialogFragment
+import kz.zhombie.museum.ViewHolderDelegate
 import kz.zhombie.museum.model.Painting
 import kz.zhombie.radio.Radio
 import kz.zhombie.radio.formatToDigitalClock
@@ -51,7 +52,7 @@ class MainActivity : AppCompatActivity() {
     private var pauseButton: MaterialButton? = null
     private var playOrPauseButton: MaterialButton? = null
 
-    private var imageLoader: CoilImageLoader? = null
+    private var imageLoader by bindAutoClearedValue<CoilImageLoader>()
 
     private var radio: Radio? = null
 
@@ -80,9 +81,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-
-        imageLoader?.clearCache()
-        imageLoader = null
 
         radio?.release()
         radio?.let { lifecycle.removeObserver(it) }
@@ -131,7 +129,11 @@ class MainActivity : AppCompatActivity() {
                 .setFooterViewEnabled(true)
                 .setRecyclerViewTransitionDelegate(object : MuseumDialogFragment.RecyclerViewTransitionDelegate {
                     override fun getImageView(holder: RecyclerView.ViewHolder): View? {
-                        return ImagesAdapter.getImageView(holder)
+                        return if (holder is ViewHolderDelegate) {
+                            holder.getImageView()
+                        } else {
+                            null
+                        }
                     }
                 })
                 .showSafely(supportFragmentManager)
