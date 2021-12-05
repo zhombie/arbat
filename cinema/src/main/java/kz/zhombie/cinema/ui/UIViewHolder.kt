@@ -11,7 +11,7 @@ import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.textview.MaterialTextView
 import kz.zhombie.cinema.R
 
-internal class ViewHolder constructor(view: View) {
+internal class UIViewHolder constructor(view: View) {
 
     val toolbar: MaterialToolbar = view.findViewById(R.id.toolbar)
     val backgroundView: View = view.findViewById(R.id.backgroundView)

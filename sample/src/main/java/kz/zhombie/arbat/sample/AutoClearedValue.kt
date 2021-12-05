@@ -1,4 +1,4 @@
-package kz.zhombie.arbat
+package kz.zhombie.arbat.sample
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.*
@@ -49,7 +49,8 @@ class AutoClearedValue<T : Any> constructor(
              */
             value?.let {
                 if (it is LifecycleObserver) {
-                    Logger.debug(TAG, "[$owner] lifecycleScope.launchWhenCreated() -> observer is added: $it")
+                    Logger.debug(TAG, "[$owner] lifecycleScope.launchWhenCreated() -> " +
+                        "observer is added: $it")
                     owner.lifecycle.addObserver(it)
                 }
             }

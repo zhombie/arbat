@@ -2,6 +2,6 @@ package kz.zhombie.cinema
 
 import android.view.View
 
-interface CinemaDialogFragmentListener {
+interface CinemaDialogFragmentDelegate {
     fun setScreenView(view: View?): CinemaDialogFragment
 }

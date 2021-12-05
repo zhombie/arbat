@@ -2,13 +2,13 @@ package kz.zhombie.museum
 
 import android.content.DialogInterface
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.ImageView
 import androidx.core.os.HandlerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.alexvasilkov.gestures.commons.DepthPageTransformer
 import com.alexvasilkov.gestures.transition.GestureTransitions
@@ -17,32 +17,31 @@ import com.alexvasilkov.gestures.transition.tracker.SimpleTracker
 import kz.zhombie.museum.logging.Logger
 import kz.zhombie.museum.model.Painting
 import kz.zhombie.museum.model.Params
-import kz.zhombie.museum.ui.ViewHolder
+import kz.zhombie.museum.ui.UIViewHolder
 import kz.zhombie.museum.ui.adapter.ViewPagerAdapter
 import kz.zhombie.museum.ui.base.BaseDialogFragment
 import java.util.*
 import kotlin.math.min
 
 class MuseumDialogFragment private constructor(
-) : BaseDialogFragment(R.layout.museum_fragment_dialog), MuseumDialogFragmentListener {
+) : BaseDialogFragment(R.layout.museum_fragment_dialog), MuseumDialogFragmentDelegate {
 
     companion object {
         private val TAG: String = MuseumDialogFragment::class.java.simpleName
-
-        fun init(paintingLoader: PaintingLoader, isLoggingEnabled: Boolean) {
-            Settings.setPermanentPaintingLoader(paintingLoader)
-            Settings.setLoggingEnabled(isLoggingEnabled)
-        }
-
-        fun clear() {
-            Settings.cleanupSettings()
-        }
 
         private fun newInstance(params: Params): MuseumDialogFragment {
             val fragment = MuseumDialogFragment()
             fragment.arguments = BundleManager.build(params)
             return fragment
         }
+    }
+
+    interface Factory {
+        data class Configuration constructor(
+            val isLoggingEnabled: Boolean
+        )
+
+        fun getMuseumConfiguration(): Configuration
     }
 
     class Builder {
@@ -54,29 +53,28 @@ class MuseumDialogFragment private constructor(
 
         private var imageView: ImageView? = null
 
-        private var recyclerView: RecyclerView? = null
         private var startPosition: Int? = null
-        private var delegate: RecyclerViewTransitionDelegate? = null
 
         private var isFooterViewEnabled: Boolean? = null
 
         private var callback: Callback? = null
 
-        fun setTag(tag: String): Builder {
+        fun setTag(tag: String?): Builder {
             this.tag = tag
             return this
         }
 
-        fun setPaintingLoader(paintingLoader: PaintingLoader): Builder {
+        fun setPaintingLoader(paintingLoader: PaintingLoader?): Builder {
             this.paintingLoader = paintingLoader
             return this
         }
 
-        fun setPainting(painting: Painting): Builder {
+        fun setPainting(painting: Painting?): Builder {
+            if (painting == null) return setPaintings(emptyList())
             return setPaintings(listOf(painting))
         }
 
-        fun setPaintings(paintings: List<Painting>): Builder {
+        fun setPaintings(paintings: List<Painting>?): Builder {
             this.paintings = paintings
             return this
         }
@@ -86,20 +84,8 @@ class MuseumDialogFragment private constructor(
             return this
         }
 
-        // TODO: Update code, in order to fix memory leak
-        @Deprecated("Causes memory leak, that's why avoid usage of this method")
-        fun setRecyclerView(recyclerView: RecyclerView?): Builder {
-            this.recyclerView = recyclerView
-            return this
-        }
-
         fun setStartPosition(position: Int): Builder {
             this.startPosition = position
-            return this
-        }
-
-        fun setRecyclerViewTransitionDelegate(delegate: RecyclerViewTransitionDelegate): Builder {
-            this.delegate = delegate
             return this
         }
 
@@ -108,7 +94,7 @@ class MuseumDialogFragment private constructor(
             return this
         }
 
-        fun setCallback(callback: Callback): Builder {
+        fun setCallback(callback: Callback?): Builder {
             this.callback = callback
             return this
         }
@@ -123,14 +109,7 @@ class MuseumDialogFragment private constructor(
                     isFooterViewEnabled = isFooterViewEnabled
                 )
             ).apply {
-                this@Builder.paintingLoader?.let {
-                    Settings.setTemporaryPaintingLoader(it)
-                }
-
                 setImageView(this@Builder.imageView)
-
-                setRecyclerView(this@Builder.recyclerView)
-                setRecyclerViewTransitionDelegate(this@Builder.delegate)
 
                 setCallback(this@Builder.callback)
             }
@@ -158,18 +137,17 @@ class MuseumDialogFragment private constructor(
         }
     }
 
-    private val handler by lazy { HandlerCompat.createAsync(Looper.getMainLooper()) }
+    private val handler: Handler = HandlerCompat.createAsync(Looper.getMainLooper())
 
     // -------------------------------------------------
 
     private var imageView: ImageView? = null
-    private var recyclerView: RecyclerView? = null
 
     private var params: Params? = null
 
     // -------------------------------------------------
 
-    private var viewHolder: ViewHolder? = null
+    private var uiViewHolder: UIViewHolder? = null
 
     private var viewPagerAdapter: ViewPagerAdapter? = null
 
@@ -181,12 +159,7 @@ class MuseumDialogFragment private constructor(
 
     // -------------------------------------------------
 
-    private var delegate: RecyclerViewTransitionDelegate? = null
     private var callback: Callback? = null
-
-    private fun setRecyclerViewTransitionDelegate(delegate: RecyclerViewTransitionDelegate?) {
-        this.delegate = delegate
-    }
 
     private fun setCallback(callback: Callback?) {
         this.callback = callback
@@ -197,13 +170,16 @@ class MuseumDialogFragment private constructor(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val configuration = Museum.getConfiguration(requireContext())
+        Logger.debug(TAG, "configuration: $configuration")
+
         params = BundleManager.parse(arguments)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewHolder = ViewHolder(view)
+        uiViewHolder = UIViewHolder(view)
 
         setupToolbar()
         setupGestureImageView()
@@ -240,7 +216,6 @@ class MuseumDialogFragment private constructor(
     }
 
     override fun dismiss() {
-        Logger.debug(TAG, "dismiss()")
         Logger.debug(TAG, "dismiss() -> ${viewsTransitionAnimator?.isLeaving}")
 
         if (viewsTransitionAnimator?.isLeaving == false) {
@@ -272,9 +247,8 @@ class MuseumDialogFragment private constructor(
         viewPagerAdapter = null
 
         imageView = null
-        recyclerView = null
 
-        viewHolder = null
+        uiViewHolder = null
     }
 
     override fun onDestroy() {
@@ -284,20 +258,16 @@ class MuseumDialogFragment private constructor(
 
         params = null
 
-        Settings.cleanupTemporarySettings()
-
-        delegate = null
-
         callback?.onDestroy()
         callback = null
     }
 
     private fun setupToolbar() {
-        viewHolder?.toolbar?.setNavigationOnClickListener { dismiss() }
+        uiViewHolder?.toolbar?.setNavigationOnClickListener { dismiss() }
     }
 
-    private fun setupViewPager() = viewHolder?.let { viewHolder ->
-        viewPagerAdapter = ViewPagerAdapter(Settings.getPaintingLoader()) {
+    private fun setupViewPager() = uiViewHolder?.let { viewHolder ->
+        viewPagerAdapter = ViewPagerAdapter {
             if (isOverlayViewVisible) {
                 viewHolder.toolbar.animate()
                     .alpha(0.0F)
@@ -357,31 +327,21 @@ class MuseumDialogFragment private constructor(
         viewHolder.viewPager.adapter = viewPagerAdapter
     }
 
-    private fun setupViewTransitionAnimator() = viewHolder?.let { viewHolder ->
-        val viewPagerTracker: SimpleTracker = object : SimpleTracker() {
+    private fun setupViewTransitionAnimator() = uiViewHolder?.let { viewHolder ->
+        Logger.debug(TAG, "setupViewTransitionAnimator()")
+
+        val viewPagerTracker = object : SimpleTracker() {
             override fun getViewAt(position: Int): View? {
                 return viewPagerAdapter?.getImageView(position)
             }
         }
 
-        viewsTransitionAnimator = when {
-            imageView != null -> {
-                GestureTransitions.from<Int>(imageView!!)
-                    .into(viewHolder.viewPager, viewPagerTracker)
-            }
-            recyclerView != null -> {
-                val recyclerViewTracker: SimpleTracker = object : SimpleTracker() {
-                    override fun getViewAt(position: Int): View? {
-                        val holder: RecyclerView.ViewHolder? = recyclerView?.findViewHolderForLayoutPosition(position)
-                        return if (holder == null) null else delegate?.getImageView(holder)
-                    }
-                }
-
-                GestureTransitions.from(recyclerView!!, recyclerViewTracker)
-                    .into(viewHolder.viewPager, viewPagerTracker)
-            }
-            else -> {
-                GestureTransitions.fromNone<Int>()
+        viewsTransitionAnimator = if (imageView == null) {
+            GestureTransitions.fromNone<Int>()
+                .into(viewHolder.viewPager, viewPagerTracker)
+        } else {
+            imageView?.let {
+                GestureTransitions.from<Int>(it)
                     .into(viewHolder.viewPager, viewPagerTracker)
             }
         }
@@ -393,12 +353,12 @@ class MuseumDialogFragment private constructor(
     private fun setPaintingInfo(painting: Painting?): Boolean {
         if (painting == null) return false
 
-        viewHolder?.titleView?.text = painting.info?.title
+        uiViewHolder?.titleView?.text = painting.info?.title
 
         if (painting.info?.subtitle.isNullOrBlank()) {
-            viewHolder?.subtitleView?.text = null
+            uiViewHolder?.subtitleView?.text = null
         } else {
-            viewHolder?.subtitleView?.text = painting.info?.subtitle
+            uiViewHolder?.subtitleView?.text = painting.info?.subtitle
         }
 
         return true
@@ -407,7 +367,7 @@ class MuseumDialogFragment private constructor(
     /**
      * Applying [ViewPager2] image animation state: fading out toolbar, title and background.
      */
-    private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) = viewHolder?.let { viewHolder ->
+    private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) = uiViewHolder?.let { viewHolder ->
         Logger.debug(TAG, "applyFullPagerState() -> $position, $isLeaving")
 
         val isFinished = position == 0F && isLeaving
@@ -503,14 +463,14 @@ class MuseumDialogFragment private constructor(
 
     private fun setupFooterView() {
         if (params?.isFooterViewEnabled == true) {
-            viewHolder?.footerView?.visibility = View.VISIBLE
+            uiViewHolder?.footerView?.visibility = View.VISIBLE
         } else {
-            viewHolder?.footerView?.visibility = View.GONE
+            uiViewHolder?.footerView?.visibility = View.GONE
         }
     }
 
     /**
-     * [MuseumDialogFragmentListener] implementation
+     * [MuseumDialogFragmentDelegate] implementation
      */
 
     override fun setImageView(imageView: ImageView?): MuseumDialogFragment {
@@ -518,17 +478,8 @@ class MuseumDialogFragment private constructor(
         return this
     }
 
-    override fun setRecyclerView(recyclerView: RecyclerView?): MuseumDialogFragment {
-        this.recyclerView = recyclerView
-        return this
-    }
-
     interface Callback {
         fun onDestroy()
-    }
-
-    interface RecyclerViewTransitionDelegate {
-        fun getImageView(holder: RecyclerView.ViewHolder): View?
     }
 
 }

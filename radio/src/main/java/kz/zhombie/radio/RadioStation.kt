@@ -2,17 +2,18 @@ package kz.zhombie.radio
 
 import android.content.Context
 import android.net.Uri
+import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.core.os.HandlerCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.LifecycleOwner
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
+import com.google.android.exoplayer2.drm.DefaultDrmSessionManagerProvider
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
-import kz.zhombie.radio.exoplayer.PlayerSimpleListener
+import kz.zhombie.radio.exoplayer.AbstractPlayerListener
 import kz.zhombie.radio.logging.Logger
 
 internal class RadioStation private constructor(
@@ -28,24 +29,9 @@ internal class RadioStation private constructor(
         }
     }
 
-    private var player: SimpleExoPlayer? = null
+    private var exoPlayer: ExoPlayer? = null
 
-    private val handler by lazy {
-        HandlerCompat.createAsync(Looper.getMainLooper())
-    }
-
-    @Suppress("unused")
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    fun onResume() {
-        Logger.debug(TAG, "onResume()")
-    }
-
-    @Suppress("unused")
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
-        Logger.debug(TAG, "onDestroy()")
-        release()
-    }
+    private val handler: Handler = HandlerCompat.createAsync(Looper.getMainLooper())
 
     /**
      * [Radio] implementation
@@ -63,7 +49,7 @@ internal class RadioStation private constructor(
     }
 
     override fun isReleased(): Boolean {
-        return player == null
+        return exoPlayer == null
     }
 
     override fun release() {
@@ -75,11 +61,11 @@ internal class RadioStation private constructor(
      */
 
     override fun play() {
-        player?.play()
+        exoPlayer?.play()
     }
 
     override fun pause() {
-        player?.pause()
+        exoPlayer?.pause()
     }
 
     override fun playOrPause() {
@@ -87,15 +73,15 @@ internal class RadioStation private constructor(
     }
 
     override fun stop(reset: Boolean) {
-        player?.stop()
+        exoPlayer?.stop()
 
         if (reset) {
-            player?.clearMediaItems()
+            exoPlayer?.clearMediaItems()
         }
     }
 
     override fun seekTo(position: Long) {
-        player?.seekTo(position)
+        exoPlayer?.seekTo(position)
     }
 
     /**
@@ -103,19 +89,19 @@ internal class RadioStation private constructor(
      */
 
     override val isSourceLoading: Boolean
-        get() = player?.isLoading == true
+        get() = exoPlayer?.isLoading == true
 
     override val isPlaying: Boolean
-        get() = player?.isPlaying == true
+        get() = exoPlayer?.isPlaying == true
 
     override val currentSource: Uri?
-        get() = player?.currentMediaItem?.playbackProperties?.uri
+        get() = exoPlayer?.currentMediaItem?.localConfiguration?.uri
 
     override val duration: Long
-        get() = player?.duration ?: -1
+        get() = exoPlayer?.duration ?: -1
 
     override val currentPosition: Long
-        get() = player?.currentPosition ?: -1
+        get() = exoPlayer?.currentPosition ?: -1
 
     override val currentPercentage: Float
         get() = if (duration > -1 && currentPosition > -1) {
@@ -125,46 +111,46 @@ internal class RadioStation private constructor(
         }
 
     override val bufferedPosition: Long
-        get() = player?.bufferedPosition ?: -1
+        get() = exoPlayer?.bufferedPosition ?: -1
 
     override val bufferedPercentage: Int
-        get() = player?.bufferedPercentage ?: -1
+        get() = exoPlayer?.bufferedPercentage ?: -1
 
     override val totalBufferedDuration: Long
-        get() = player?.totalBufferedDuration ?: -1
+        get() = exoPlayer?.totalBufferedDuration ?: -1
 
     /**
      * Internal methods
      */
 
-    private fun setupPlayer(playWhenReady: Boolean): SimpleExoPlayer? {
-        return if (player == null) {
-            player = SimpleExoPlayer.Builder(context)
+    private fun setupPlayer(playWhenReady: Boolean): ExoPlayer? {
+        return if (exoPlayer == null) {
+            exoPlayer = ExoPlayer.Builder(context)
                 .setAudioAttributes(AudioAttributes.DEFAULT, true)
                 .build()
 
-            player?.playWhenReady = playWhenReady
-            player?.pauseAtEndOfMediaItems = true
-            player?.setHandleAudioBecomingNoisy(true)
-            player?.addListener(eventListener)
-            player?.repeatMode = SimpleExoPlayer.REPEAT_MODE_OFF
-            player?.setWakeMode(C.WAKE_MODE_NONE)
-            player
+            exoPlayer?.playWhenReady = playWhenReady
+            exoPlayer?.pauseAtEndOfMediaItems = true
+            exoPlayer?.setHandleAudioBecomingNoisy(true)
+            exoPlayer?.addListener(eventListener)
+            exoPlayer?.repeatMode = ExoPlayer.REPEAT_MODE_OFF
+            exoPlayer?.setWakeMode(C.WAKE_MODE_NONE)
+            exoPlayer
         } else {
-            player
+            exoPlayer
         }
     }
 
     private fun setUri(uri: Uri) = try {
-        if (player == null) {
+        if (exoPlayer == null) {
             Log.w(TAG, "Player is not initialized!")
         } else {
-            if (player?.isPlaying == true) {
-                player?.pause()
+            if (exoPlayer?.isPlaying == true) {
+                exoPlayer?.pause()
             }
 
-            if ((player?.mediaItemCount ?: 0) > 0) {
-                player?.clearMediaItems()
+            if ((exoPlayer?.mediaItemCount ?: 0) > 0) {
+                exoPlayer?.clearMediaItems()
             }
 
             val mediaItem = MediaItem.Builder()
@@ -177,12 +163,15 @@ internal class RadioStation private constructor(
                 .setConnectTimeoutMs(15 * 1000)
                 .setReadTimeoutMs(15 * 1000)
 
+            val drmSessionManagerProvider = DefaultDrmSessionManagerProvider()
+            drmSessionManagerProvider.setDrmHttpDataSourceFactory(httpDataSourceFactory)
+
             val mediaSource = DefaultMediaSourceFactory(context)
-                .setDrmHttpDataSourceFactory(httpDataSourceFactory)
+                .setDrmSessionManagerProvider(drmSessionManagerProvider)
                 .createMediaSource(mediaItem)
 
-            player?.setMediaSource(mediaSource)
-            player?.prepare()
+            exoPlayer?.setMediaSource(mediaSource)
+            exoPlayer?.prepare()
         }
     } catch (e: Exception) {
         e.printStackTrace()
@@ -190,22 +179,22 @@ internal class RadioStation private constructor(
     }
 
     private fun togglePlayOrPause() {
-        if (player == null) {
+        if (exoPlayer == null) {
             Log.w(TAG, "Player is not initialized!")
         } else {
-            if (player?.isPlaying == true) {
-                player?.pause()
+            if (exoPlayer?.isPlaying == true) {
+                exoPlayer?.pause()
             } else {
-                player?.play()
+                exoPlayer?.play()
             }
         }
     }
 
     private fun releasePlayer() {
-        player?.clearMediaItems()
-        player?.removeListener(eventListener)
-        player?.release()
-        player = null
+        exoPlayer?.clearMediaItems()
+        exoPlayer?.removeListener(eventListener)
+        exoPlayer?.release()
+        exoPlayer = null
     }
 
     /**
@@ -213,7 +202,7 @@ internal class RadioStation private constructor(
      */
 
     private val eventListener by lazy {
-        object : PlayerSimpleListener() {
+        object : AbstractPlayerListener() {
             override fun onIsLoadingChanged(isLoading: Boolean) {
                 super.onIsLoadingChanged(isLoading)
                 listener?.onIsSourceLoadingChanged(isLoading)
@@ -230,7 +219,7 @@ internal class RadioStation private constructor(
                     Player.STATE_READY ->
                         listener?.onPlaybackStateChanged(Radio.PlaybackState.READY)
                     Player.STATE_ENDED -> {
-                        player?.seekTo(0)
+                        exoPlayer?.seekTo(0)
                         listener?.onPlaybackStateChanged(Radio.PlaybackState.ENDED)
                     }
                 }
@@ -255,7 +244,7 @@ internal class RadioStation private constructor(
             listener?.onPlaybackPositionChanged(position)
         }
 
-        if (player?.isPlaying == true) {
+        if (exoPlayer?.isPlaying == true) {
             HandlerCompat.postDelayed(
                 handler,
                 this::updateCurrentPlayerPosition,
@@ -265,6 +254,21 @@ internal class RadioStation private constructor(
         } else {
             handler.removeCallbacksAndMessages("timer")
         }
+    }
+
+    /**
+     * [androidx.lifecycle.DefaultLifecycleObserver] implementation
+     */
+
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        Logger.debug(TAG, "onResume()")
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        super.onDestroy(owner)
+        Logger.debug(TAG, "onDestroy()")
+        release()
     }
 
 }

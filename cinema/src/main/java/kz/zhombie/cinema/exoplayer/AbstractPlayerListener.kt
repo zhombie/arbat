@@ -2,41 +2,23 @@ package kz.zhombie.cinema.exoplayer
 
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
-import com.google.android.exoplayer2.device.DeviceInfo
 import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.text.Cue
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
+import com.google.android.exoplayer2.trackselection.TrackSelectionParameters
 import com.google.android.exoplayer2.video.VideoSize
 import kz.zhombie.cinema.logging.Logger
 
-internal abstract class PlayerSimpleListener : Player.Listener {
+internal abstract class AbstractPlayerListener : Player.Listener {
 
     companion object {
-        private val TAG = PlayerSimpleListener::class.java.simpleName
+        private val TAG = AbstractPlayerListener::class.java.simpleName
     }
-
-    /**
-     * [com.google.android.exoplayer2.video.VideoListener] implementation
-     */
 
     override fun onVideoSizeChanged(videoSize: VideoSize) {
         super.onVideoSizeChanged(videoSize)
         Logger.debug(TAG, "onVideoSizeChanged() -> videoSize: $videoSize")
-    }
-
-    override fun onVideoSizeChanged(
-        width: Int,
-        height: Int,
-        unappliedRotationDegrees: Int,
-        pixelWidthHeightRatio: Float
-    ) {
-        super.onVideoSizeChanged(width, height, unappliedRotationDegrees, pixelWidthHeightRatio)
-        Logger.debug(TAG, "onVideoSizeChanged() -> " +
-            "width: $width, " +
-            "height: $height, " +
-            "unappliedRotationDegrees: $unappliedRotationDegrees, " +
-            "pixelWidthHeightRatio: $pixelWidthHeightRatio")
     }
 
     override fun onSurfaceSizeChanged(width: Int, height: Int) {
@@ -48,10 +30,6 @@ internal abstract class PlayerSimpleListener : Player.Listener {
         super.onRenderedFirstFrame()
         Logger.debug(TAG, "onRenderedFirstFrame()")
     }
-
-    /**
-     * [com.google.android.exoplayer2.audio.AudioListener] implementation
-     */
 
     override fun onAudioSessionIdChanged(audioSessionId: Int) {
         super.onAudioSessionIdChanged(audioSessionId)
@@ -74,27 +52,15 @@ internal abstract class PlayerSimpleListener : Player.Listener {
             "skipSilenceEnabled: $skipSilenceEnabled")
     }
 
-    /**
-     * [com.google.android.exoplayer2.text.TextOutput] implementation
-     */
-
     override fun onCues(cues: MutableList<Cue>) {
         super.onCues(cues)
         Logger.debug(TAG, "onCues() -> cues: $cues")
     }
 
-    /**
-     * [com.google.android.exoplayer2.metadata.MetadataOutput] implementation
-     */
-
     override fun onMetadata(metadata: Metadata) {
         super.onMetadata(metadata)
         Logger.debug(TAG, "onMetadata() -> metadata: $metadata")
     }
-
-    /**
-     * [com.google.android.exoplayer2.device.DeviceListener] implementation
-     */
 
     override fun onDeviceInfoChanged(deviceInfo: DeviceInfo) {
         super.onDeviceInfoChanged(deviceInfo)
@@ -106,10 +72,6 @@ internal abstract class PlayerSimpleListener : Player.Listener {
         Logger.debug(TAG, "onDeviceVolumeChanged() -> volume: $volume, muted: $muted")
     }
 
-    /**
-     * [com.google.android.exoplayer2.Player.EventListener] implementation
-     */
-
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
         super.onTimelineChanged(timeline, reason)
         Logger.debug(TAG, "onTimelineChanged() -> timeline: $timeline, reason: $reason")
@@ -120,6 +82,11 @@ internal abstract class PlayerSimpleListener : Player.Listener {
         Logger.debug(TAG, "onMediaItemTransition() -> mediaItem: $mediaItem, reason: $reason")
     }
 
+    override fun onTracksInfoChanged(tracksInfo: TracksInfo) {
+        super.onTracksInfoChanged(tracksInfo)
+        Logger.debug(TAG, "onTracksInfoChanged() -> tracksInfo: $tracksInfo")
+    }
+
     override fun onTracksChanged(
         trackGroups: TrackGroupArray,
         trackSelections: TrackSelectionArray
@@ -128,11 +95,6 @@ internal abstract class PlayerSimpleListener : Player.Listener {
         Logger.debug(TAG, "onTracksChanged() -> " +
             "trackGroups: $trackGroups, " +
             "trackSelections: $trackSelections")
-    }
-
-    override fun onStaticMetadataChanged(metadataList: MutableList<Metadata>) {
-        super.onStaticMetadataChanged(metadataList)
-        Logger.debug(TAG, "onStaticMetadataChanged() -> metadataList: $metadataList")
     }
 
     override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
@@ -159,6 +121,11 @@ internal abstract class PlayerSimpleListener : Player.Listener {
         super.onAvailableCommandsChanged(availableCommands)
         Logger.debug(TAG, "onAvailableCommandsChanged() -> " +
             "availableCommands: $availableCommands")
+    }
+
+    override fun onTrackSelectionParametersChanged(parameters: TrackSelectionParameters) {
+        super.onTrackSelectionParametersChanged(parameters)
+        Logger.debug(TAG, "onTrackSelectionParametersChanged() -> $parameters")
     }
 
     override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
@@ -246,10 +213,9 @@ internal abstract class PlayerSimpleListener : Player.Listener {
             "seekForwardIncrementMs: $seekForwardIncrementMs")
     }
 
-    override fun onMaxSeekToPreviousPositionChanged(maxSeekToPreviousPositionMs: Int) {
+    override fun onMaxSeekToPreviousPositionChanged(maxSeekToPreviousPositionMs: Long) {
         super.onMaxSeekToPreviousPositionChanged(maxSeekToPreviousPositionMs)
-        Logger.debug(TAG, "onMaxSeekToPreviousPositionChanged() -> " +
-            "maxSeekToPreviousPositionMs: $maxSeekToPreviousPositionMs")
+        Logger.debug(TAG, "onMaxSeekToPreviousPositionChanged() -> $maxSeekToPreviousPositionMs")
     }
 
     override fun onSeekProcessed() {

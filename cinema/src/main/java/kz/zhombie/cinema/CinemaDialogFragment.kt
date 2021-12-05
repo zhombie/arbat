@@ -2,6 +2,7 @@ package kz.zhombie.cinema
 
 import android.content.DialogInterface
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.view.*
 import androidx.core.os.HandlerCompat
@@ -11,26 +12,23 @@ import com.alexvasilkov.gestures.transition.GestureTransitions
 import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.audio.AudioAttributes
+import com.google.android.exoplayer2.drm.DefaultDrmSessionManagerProvider
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
-import kz.zhombie.cinema.exoplayer.PlayerSimpleListener
+import kz.zhombie.cinema.exoplayer.AbstractPlayerListener
 import kz.zhombie.cinema.logging.Logger
 import kz.zhombie.cinema.model.Movie
 import kz.zhombie.cinema.model.Params
-import kz.zhombie.cinema.ui.ViewHolder
+import kz.zhombie.cinema.ui.UIViewHolder
 import kz.zhombie.cinema.ui.base.BaseDialogFragment
 
 class CinemaDialogFragment private constructor(
-) : BaseDialogFragment(R.layout.cinema_fragment_dialog), CinemaDialogFragmentListener {
+) : BaseDialogFragment(R.layout.cinema_fragment_dialog), CinemaDialogFragmentDelegate {
 
     companion object {
         private val TAG: String = CinemaDialogFragment::class.java.simpleName
-
-        fun init(isLoggingEnabled: Boolean) {
-            Settings.setLoggingEnabled(isLoggingEnabled)
-        }
 
         private fun newInstance(params: Params): CinemaDialogFragment {
             val fragment = CinemaDialogFragment()
@@ -107,7 +105,7 @@ class CinemaDialogFragment private constructor(
         }
     }
 
-    private val handler by lazy { HandlerCompat.createAsync(Looper.getMainLooper()) }
+    private val handler: Handler = HandlerCompat.createAsync(Looper.getMainLooper())
 
     // -------------------------------------------------
 
@@ -117,9 +115,9 @@ class CinemaDialogFragment private constructor(
 
     // -------------------------------------------------
 
-    private var viewHolder: ViewHolder? = null
+    private var uiViewHolder: UIViewHolder? = null
 
-    private var player: SimpleExoPlayer? = null
+    private var exoPlayer: ExoPlayer? = null
 
     private var viewsTransitionAnimator: ViewsTransitionAnimator<Any>? = null
 
@@ -148,7 +146,7 @@ class CinemaDialogFragment private constructor(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewHolder = ViewHolder(view)
+        uiViewHolder = UIViewHolder(view)
 
         setupToolbar()
         setupBackgroundView()
@@ -174,27 +172,33 @@ class CinemaDialogFragment private constructor(
                 .setConnectTimeoutMs(15 * 1000)
                 .setReadTimeoutMs(15 * 1000)
 
+            val drmSessionManagerProvider = DefaultDrmSessionManagerProvider()
+            drmSessionManagerProvider.setDrmHttpDataSourceFactory(httpDataSourceFactory)
+
             val mediaSource = DefaultMediaSourceFactory(requireContext())
-                .setDrmHttpDataSourceFactory(httpDataSourceFactory)
+                .setDrmSessionManagerProvider(drmSessionManagerProvider)
                 .createMediaSource(mediaItem)
 
-            player?.setMediaSource(mediaSource)
-            player?.prepare()
+            exoPlayer?.setMediaSource(mediaSource)
+            exoPlayer?.prepare()
         } catch (e: RuntimeException) {
             e.printStackTrace()
-            eventListener.onPlayerError(ExoPlaybackException.createForUnexpected(e))
+            eventListener.onPlayerError(
+                ExoPlaybackException
+                    .createForUnexpected(e, ExoPlaybackException.TYPE_UNEXPECTED)
+            )
         }
     }
 
     override fun onPause() {
         super.onPause()
-        viewHolder?.playerView?.onPause()
+        uiViewHolder?.playerView?.onPause()
         releasePlayer()
     }
 
     override fun onStop() {
         super.onStop()
-        viewHolder?.playerView?.onPause()
+        uiViewHolder?.playerView?.onPause()
         releasePlayer()
     }
 
@@ -237,7 +241,7 @@ class CinemaDialogFragment private constructor(
 
         screenView = null
 
-        viewHolder = null
+        uiViewHolder = null
 
         params = null
 
@@ -246,21 +250,20 @@ class CinemaDialogFragment private constructor(
     }
 
     private fun setupToolbar() {
-        viewHolder?.toolbar?.setNavigationOnClickListener { dismiss() }
+        uiViewHolder?.toolbar?.setNavigationOnClickListener { dismiss() }
     }
 
     private fun setupBackgroundView() {
-        viewHolder?.backgroundView?.visibility = View.VISIBLE
+        uiViewHolder?.backgroundView?.visibility = View.VISIBLE
     }
 
-    private fun setupViewTransitionAnimator() = viewHolder?.let { viewHolder ->
-        viewsTransitionAnimator = when {
-            screenView != null -> {
-                GestureTransitions.from<Any>(screenView!!)
-                    .into(viewHolder.gestureFrameLayout)
-            }
-            else -> {
-                GestureTransitions.fromNone<Any>()
+    private fun setupViewTransitionAnimator() = uiViewHolder?.let { viewHolder ->
+        viewsTransitionAnimator = if (screenView == null) {
+            GestureTransitions.fromNone<Any>()
+                .into(viewHolder.gestureFrameLayout)
+        } else {
+            screenView?.let {
+                GestureTransitions.from<Any>(it)
                     .into(viewHolder.gestureFrameLayout)
             }
         }
@@ -271,7 +274,7 @@ class CinemaDialogFragment private constructor(
 
     private fun setupGestureFrameLayout() {
         // Settings
-        viewHolder?.gestureFrameLayout?.controller?.settings
+        uiViewHolder?.gestureFrameLayout?.controller?.settings
             ?.setAnimationsDuration(225L)
             ?.setBoundsType(com.alexvasilkov.gestures.Settings.Bounds.NORMAL)
             ?.setDoubleTapEnabled(true)
@@ -287,52 +290,52 @@ class CinemaDialogFragment private constructor(
             ?.isZoomEnabled = true
 
         // Click actions
-        viewHolder?.gestureFrameLayout?.setOnClickListener {
+        uiViewHolder?.gestureFrameLayout?.setOnClickListener {
             if (isOverlayViewVisible) {
-                viewHolder?.toolbar?.animate()
+                uiViewHolder?.toolbar?.animate()
                     ?.alpha(0.0F)
                     ?.setDuration(50L)
                     ?.withEndAction {
-                        viewHolder?.toolbar?.visibility = View.INVISIBLE
+                        uiViewHolder?.toolbar?.visibility = View.INVISIBLE
                     }
                     ?.start()
 
                 controllerViewAnimation?.cancel()
                 controllerViewAnimation = null
 
-                viewHolder?.controllerView?.visibility = View.INVISIBLE
+                uiViewHolder?.controllerView?.visibility = View.INVISIBLE
 
                 if (params?.isFooterViewEnabled == true) {
-                    viewHolder?.footerView?.animate()
+                    uiViewHolder?.footerView?.animate()
                         ?.alpha(0.0F)
                         ?.setDuration(50L)
                         ?.withEndAction {
-                            viewHolder?.footerView?.visibility = View.INVISIBLE
+                            uiViewHolder?.footerView?.visibility = View.INVISIBLE
                         }
                         ?.start()
                 }
 
                 isOverlayViewVisible = false
             } else {
-                viewHolder?.toolbar?.animate()
+                uiViewHolder?.toolbar?.animate()
                     ?.alpha(1.0F)
                     ?.setDuration(50L)
                     ?.withStartAction {
-                        viewHolder?.toolbar?.visibility = View.VISIBLE
+                        uiViewHolder?.toolbar?.visibility = View.VISIBLE
                     }
                     ?.start()
 
                 controllerViewAnimation?.cancel()
                 controllerViewAnimation = null
 
-                viewHolder?.controllerView?.visibility = View.VISIBLE
+                uiViewHolder?.controllerView?.visibility = View.VISIBLE
 
                 if (params?.isFooterViewEnabled == true) {
-                    viewHolder?.footerView?.animate()
+                    uiViewHolder?.footerView?.animate()
                         ?.alpha(1.0F)
                         ?.setDuration(50L)
                         ?.withStartAction {
-                            viewHolder?.footerView?.visibility = View.VISIBLE
+                            uiViewHolder?.footerView?.visibility = View.VISIBLE
                         }
                         ?.start()
                 }
@@ -343,64 +346,64 @@ class CinemaDialogFragment private constructor(
     }
 
     private fun setupInfo() {
-        viewHolder?.titleView?.text = params?.movie?.info?.title
+        uiViewHolder?.titleView?.text = params?.movie?.info?.title
 
         val subtitle = params?.movie?.info?.subtitle
         if (subtitle.isNullOrBlank()) {
-            viewHolder?.subtitleView?.visibility = View.GONE
+            uiViewHolder?.subtitleView?.visibility = View.GONE
         } else {
-            viewHolder?.subtitleView?.text = subtitle
-            viewHolder?.subtitleView?.visibility = View.VISIBLE
+            uiViewHolder?.subtitleView?.text = subtitle
+            uiViewHolder?.subtitleView?.visibility = View.VISIBLE
         }
     }
 
     private fun setupPlayer() {
-        if (player == null) {
-            player = SimpleExoPlayer.Builder(requireContext())
+        if (exoPlayer == null) {
+            exoPlayer = ExoPlayer.Builder(requireContext())
                 .setAudioAttributes(AudioAttributes.DEFAULT, true)
                 .build()
 
-            viewHolder?.playerView?.player = player
-            viewHolder?.playerView?.setShowPreviousButton(false)
-            viewHolder?.playerView?.setShowNextButton(false)
-            viewHolder?.playerView?.setShowRewindButton(false)
-            viewHolder?.playerView?.setShowRewindButton(false)
-            viewHolder?.playerView?.setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
-            viewHolder?.playerView?.setShowFastForwardButton(false)
-            viewHolder?.playerView?.setShowShuffleButton(false)
-            viewHolder?.playerView?.useController = false
-            viewHolder?.playerView?.controllerAutoShow = false
+            uiViewHolder?.playerView?.player = exoPlayer
+            uiViewHolder?.playerView?.setShowPreviousButton(false)
+            uiViewHolder?.playerView?.setShowNextButton(false)
+            uiViewHolder?.playerView?.setShowRewindButton(false)
+            uiViewHolder?.playerView?.setShowRewindButton(false)
+            uiViewHolder?.playerView?.setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
+            uiViewHolder?.playerView?.setShowFastForwardButton(false)
+            uiViewHolder?.playerView?.setShowShuffleButton(false)
+            uiViewHolder?.playerView?.useController = false
+            uiViewHolder?.playerView?.controllerAutoShow = false
 
-            player?.playWhenReady = true
-            player?.pauseAtEndOfMediaItems = true
-            player?.addListener(eventListener)
-            player?.repeatMode = SimpleExoPlayer.REPEAT_MODE_OFF
-            player?.setWakeMode(C.WAKE_MODE_NONE)
+            exoPlayer?.playWhenReady = true
+            exoPlayer?.pauseAtEndOfMediaItems = true
+            exoPlayer?.addListener(eventListener)
+            exoPlayer?.repeatMode = ExoPlayer.REPEAT_MODE_OFF
+            exoPlayer?.setWakeMode(C.WAKE_MODE_NONE)
         }
     }
 
     private fun setupControllerView() {
-        viewHolder?.playOrPauseButton?.setOnClickListener {
-            if (player?.isPlaying == true) {
-                player?.pause()
+        uiViewHolder?.playOrPauseButton?.setOnClickListener {
+            if (exoPlayer?.isPlaying == true) {
+                exoPlayer?.pause()
             } else {
-                player?.play()
+                exoPlayer?.play()
             }
         }
     }
 
     private fun setupFooterView() {
         if (params?.isFooterViewEnabled == true) {
-            viewHolder?.footerView?.visibility = View.VISIBLE
+            uiViewHolder?.footerView?.visibility = View.VISIBLE
         } else {
-            viewHolder?.footerView?.visibility = View.GONE
+            uiViewHolder?.footerView?.visibility = View.GONE
         }
     }
 
     /**
      * Applying [View] image animation state: fading out toolbar, title and background.
      */
-    private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) = viewHolder?.let { viewHolder ->
+    private fun applyFullViewPagerState(position: Float, isLeaving: Boolean) = uiViewHolder?.let { viewHolder ->
         val isFinished = position == 0F && isLeaving
 
         viewHolder.toolbar.alpha = position
@@ -453,10 +456,10 @@ class CinemaDialogFragment private constructor(
     }
 
     private fun releasePlayer() {
-        player?.clearMediaItems()
-        player?.removeListener(eventListener)
-        player?.release()
-        player = null
+        exoPlayer?.clearMediaItems()
+        exoPlayer?.removeListener(eventListener)
+        exoPlayer?.release()
+        exoPlayer = null
     }
 
     /**
@@ -464,31 +467,31 @@ class CinemaDialogFragment private constructor(
      */
 
     private val eventListener by lazy {
-        object : PlayerSimpleListener() {
+        object : AbstractPlayerListener() {
             override fun onPlaybackStateChanged(state: Int) {
                 super.onPlaybackStateChanged(state)
 
                 if (state == Player.STATE_ENDED) {
-                    player?.seekTo(0)
+                    exoPlayer?.seekTo(0)
 
-                    viewHolder?.toolbar?.alpha = 1.0F
-                    viewHolder?.toolbar?.visibility = View.VISIBLE
+                    uiViewHolder?.toolbar?.alpha = 1.0F
+                    uiViewHolder?.toolbar?.visibility = View.VISIBLE
 
-                    viewHolder?.controllerView?.alpha = 1.0F
-                    viewHolder?.controllerView?.visibility = View.VISIBLE
+                    uiViewHolder?.controllerView?.alpha = 1.0F
+                    uiViewHolder?.controllerView?.visibility = View.VISIBLE
 
                     if (params?.isFooterViewEnabled == true) {
-                        viewHolder?.footerView?.alpha = 1.0F
-                        viewHolder?.footerView?.visibility = View.VISIBLE
+                        uiViewHolder?.footerView?.alpha = 1.0F
+                        uiViewHolder?.footerView?.visibility = View.VISIBLE
                     }
                 }
 
                 if (state == Player.STATE_BUFFERING) {
-                    viewHolder?.playOrPauseButton?.visibility = View.INVISIBLE
-                    viewHolder?.progressIndicator?.visibility = View.VISIBLE
+                    uiViewHolder?.playOrPauseButton?.visibility = View.INVISIBLE
+                    uiViewHolder?.progressIndicator?.visibility = View.VISIBLE
                 } else {
-                    viewHolder?.progressIndicator?.visibility = View.INVISIBLE
-                    viewHolder?.playOrPauseButton?.visibility = View.VISIBLE
+                    uiViewHolder?.progressIndicator?.visibility = View.INVISIBLE
+                    uiViewHolder?.playOrPauseButton?.visibility = View.VISIBLE
                 }
             }
 
@@ -496,19 +499,19 @@ class CinemaDialogFragment private constructor(
                 super.onIsPlayingChanged(isPlaying)
 
                 if (isPlaying) {
-                    viewHolder?.playOrPauseButton?.setIconResource(R.drawable.cinema_ic_pause)
+                    uiViewHolder?.playOrPauseButton?.setIconResource(R.drawable.cinema_ic_pause)
 
-                    controllerViewAnimation = viewHolder?.controllerView?.animate()
+                    controllerViewAnimation = uiViewHolder?.controllerView?.animate()
                         ?.setStartDelay(2500L)
                         ?.withStartAction {
-                            viewHolder?.controllerView?.visibility = View.VISIBLE
+                            uiViewHolder?.controllerView?.visibility = View.VISIBLE
                         }
                         ?.withEndAction {
-                            viewHolder?.controllerView?.visibility = View.INVISIBLE
+                            uiViewHolder?.controllerView?.visibility = View.INVISIBLE
                         }
                     controllerViewAnimation?.start()
                 } else {
-                    viewHolder?.playOrPauseButton?.setIconResource(R.drawable.cinema_ic_play)
+                    uiViewHolder?.playOrPauseButton?.setIconResource(R.drawable.cinema_ic_play)
                 }
             }
 
@@ -521,7 +524,7 @@ class CinemaDialogFragment private constructor(
     }
 
     /**
-     * [CinemaDialogFragmentListener] implementation
+     * [CinemaDialogFragmentDelegate] implementation
      */
 
     override fun setScreenView(view: View?): CinemaDialogFragment {

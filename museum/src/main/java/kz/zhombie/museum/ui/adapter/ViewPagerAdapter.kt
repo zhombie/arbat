@@ -8,14 +8,12 @@ import com.alexvasilkov.gestures.GestureController.OnStateChangeListener
 import com.alexvasilkov.gestures.Settings
 import com.alexvasilkov.gestures.State
 import com.alexvasilkov.gestures.views.GestureImageView
-import kz.zhombie.museum.PaintingLoader
-import kz.zhombie.museum.R
+import kz.zhombie.museum.*
 import kz.zhombie.museum.logging.Logger
 import kz.zhombie.museum.model.Painting
 import kotlin.math.max
 
 internal class ViewPagerAdapter constructor(
-    private val paintingLoader: PaintingLoader,
     private val callback: () -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -46,7 +44,7 @@ internal class ViewPagerAdapter constructor(
 
     fun getImageView(position: Int): GestureImageView? {
         val holder = recyclerView?.findViewHolderForLayoutPosition(position)
-        return if (holder is ViewHolder) holder.gestureImageView else null
+        return if (holder is ViewHolder) holder.getImageView() else null
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
@@ -70,7 +68,7 @@ internal class ViewPagerAdapter constructor(
 
         // Enabling smooth scrolling when image panning turns into ViewPager scrolling.
         // Otherwise ViewPager scrolling will only be possible when image is in zoomed out state.
-        val controller = holder.gestureImageView.controller
+        val controller = holder.getImageView().controller
         controller.addOnStateChangeListener(DynamicZoom(controller.settings))
 
         return holder
@@ -78,17 +76,15 @@ internal class ViewPagerAdapter constructor(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is ViewHolder) {
-            paintingLoader.loadFullscreenImage(
-                context = holder.itemView.context,
-                imageView = holder.gestureImageView,
-                uri = paintings[position].uri
-            )
+            holder.getImageView().load(paintings[position].uri) {
+                setCrossfade(PaintingLoader.Request.Crossfade.Disabled())
+            }
         }
     }
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         if (holder is ViewHolder) {
-            paintingLoader.dispose(holder.gestureImageView)
+            holder.getImageView().dispose()
         }
     }
 
@@ -98,8 +94,8 @@ internal class ViewPagerAdapter constructor(
         LayoutInflater.from(container.context)
             .inflate(R.layout.museum_cell_image, container, false)
     ) {
-
-        val gestureImageView: GestureImageView = itemView.findViewById(R.id.gestureImageView)
+        private val gestureImageView =
+            itemView.findViewById<GestureImageView>(R.id.gestureImageView)
 
         init {
             Logger.debug(TAG, "${ViewHolder::class.java.simpleName} created")
@@ -123,6 +119,10 @@ internal class ViewPagerAdapter constructor(
                 .isZoomEnabled = true
 
             gestureImageView.setOnClickListener { callback() }
+        }
+
+        fun getImageView(): GestureImageView {
+            return gestureImageView
         }
     }
 

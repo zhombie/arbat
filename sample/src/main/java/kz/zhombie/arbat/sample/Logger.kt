@@ -1,4 +1,4 @@
-package kz.zhombie.arbat
+package kz.zhombie.arbat.sample
 
 import android.util.Log
 

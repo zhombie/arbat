@@ -1,4 +1,4 @@
-package kz.zhombie.arbat
+package kz.zhombie.arbat.sample
 
 import android.net.Uri
 import android.view.LayoutInflater
@@ -6,10 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import kz.zhombie.museum.ViewHolderDelegate
+import kz.zhombie.museum.PaintingLoader
+import kz.zhombie.museum.dispose
+import kz.zhombie.museum.load
 
 class ImagesAdapter constructor(
-    private val imageLoader: CoilImageLoader,
     private val callback: (position: Int) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -36,12 +37,12 @@ class ImagesAdapter constructor(
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         super.onViewRecycled(holder)
-        if (holder is ViewHolderDelegate) {
-            holder.getImageView()?.let { imageLoader.dispose(it) }
+        if (holder is ViewHolder) {
+            holder.getImageView().dispose()
         }
     }
 
-    private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view), ViewHolderDelegate {
+    private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val imageView: ImageView = view.findViewById(R.id.imageView)
 
         init {
@@ -49,12 +50,15 @@ class ImagesAdapter constructor(
         }
 
         fun bind(image: Uri) {
-            imageLoader.loadSmallImage(itemView.context, imageView, image)
+            imageView.load(image) {
+                setCrossfade(PaintingLoader.Request.Crossfade.DefaultEnabled())
+                setSize(300, 300)
+            }
 
             imageView.setTag(R.id.museum_tag_selected_image, image)
         }
 
-        override fun getImageView(): ImageView {
+        fun getImageView(): ImageView {
             return imageView
         }
 

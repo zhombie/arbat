@@ -5,53 +5,49 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion '30.0.3'
+    compileSdkVersion 31
+    buildToolsVersion '31.0.0'
 
     defaultConfig {
         applicationId 'kz.zhombie.arbat'
 
-        minSdkVersion 21
-        targetSdkVersion 30
+        minSdkVersion 23
+        targetSdkVersion 31
 
-        versionCode 1
-        versionName '1.0'
+        versionCode project.ext.version_code
+        versionName project.version
     }
 
     buildTypes {
         release {
             minifyEnabled false
+
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 }
 
 ext {
-    coil_version = '1.3.2'
+    coil_version = '1.4.0'
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-    // Library
-    implementation project(':cinema')
-    implementation project(':museum')
-    implementation project(':radio')
-
     // Activity
-    implementation 'androidx.activity:activity-ktx:1.3.1'
+    implementation 'androidx.activity:activity-ktx:1.4.0'
 
     // AppCompat
-    implementation 'androidx.appcompat:appcompat:1.4.0-alpha03'
+    implementation 'androidx.appcompat:appcompat:1.4.0'
 
     // Material components
     implementation 'com.google.android.material:material:1.4.0'
@@ -64,4 +60,9 @@ dependencies {
     implementation "io.coil-kt:coil:$coil_version"
     implementation "io.coil-kt:coil-gif:$coil_version"
     implementation "io.coil-kt:coil-video:$coil_version"
+
+    // Library
+    implementation project(':cinema')
+    implementation project(':museum')
+    implementation project(':radio')
 }

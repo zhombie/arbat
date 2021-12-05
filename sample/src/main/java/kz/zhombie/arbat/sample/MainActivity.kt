@@ -1,10 +1,9 @@
-package kz.zhombie.arbat
+package kz.zhombie.arbat.sample
 
 import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -14,8 +13,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
 import kz.zhombie.cinema.CinemaDialogFragment
 import kz.zhombie.cinema.model.Movie
-import kz.zhombie.museum.MuseumDialogFragment
-import kz.zhombie.museum.ViewHolderDelegate
+import kz.zhombie.museum.*
 import kz.zhombie.museum.model.Painting
 import kz.zhombie.radio.Radio
 import kz.zhombie.radio.formatToDigitalClock
@@ -52,7 +50,11 @@ class MainActivity : AppCompatActivity() {
     private var pauseButton: MaterialButton? = null
     private var playOrPauseButton: MaterialButton? = null
 
-    private var imageLoader by bindAutoClearedValue<CoilImageLoader>()
+//    private var imageLoader by bindAutoClearedValue<CoilImageLoader>()
+
+//    override fun getPaintingLoader(): PaintingLoader {
+//        return requireNotNull(imageLoader)
+//    }
 
     private var radio: Radio? = null
 
@@ -72,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         pauseButton = findViewById(R.id.pauseButton)
         playOrPauseButton = findViewById(R.id.playOrPauseButton)
 
-        imageLoader = CoilImageLoader(this)
+//        imageLoader = CoilImageLoader(this)
 
         setupMuseum()
         setupCinema()
@@ -85,12 +87,12 @@ class MainActivity : AppCompatActivity() {
         radio?.release()
         radio?.let { lifecycle.removeObserver(it) }
         radio = null
+
+        paintingLoader.clearCache()
+        Museum.clear()
     }
 
     private fun setupMuseum() {
-        // ImageLoader initialization
-        MuseumDialogFragment.init(requireNotNull(imageLoader), true)
-
         // Dummy data
         val images = listOf(IMAGE_1_URL, IMAGE_2_URL, IMAGE_3_URL, IMAGE_4_URL, IMAGE_5_URL)
         val imageUris = images.map { Uri.parse(it) }
@@ -98,7 +100,10 @@ class MainActivity : AppCompatActivity() {
         // Single image (ImageView)
         val singleImageUri = imageUris.first()
 
-        imageLoader?.loadSmallImage(this, requireNotNull(imageView), singleImageUri)
+        imageView?.load(singleImageUri) {
+            setCrossfade(PaintingLoader.Request.Crossfade.DefaultEnabled())
+            setSize(300, 300)
+        }
 
         imageView?.setOnClickListener {
             MuseumDialogFragment.Builder()
@@ -114,7 +119,7 @@ class MainActivity : AppCompatActivity() {
         // Multiple images (RecyclerView)
         recyclerView?.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
 
-        val adapter = ImagesAdapter(requireNotNull(imageLoader)) { position ->
+        val adapter = ImagesAdapter { position ->
             MuseumDialogFragment.Builder()
                 .setPaintings(
                     imageUris.mapIndexed { index, uri ->
@@ -124,18 +129,18 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                 )
-                .setRecyclerView(recyclerView)
+//                .setRecyclerView(recyclerView)
                 .setStartPosition(position)
                 .setFooterViewEnabled(true)
-                .setRecyclerViewTransitionDelegate(object : MuseumDialogFragment.RecyclerViewTransitionDelegate {
-                    override fun getImageView(holder: RecyclerView.ViewHolder): View? {
-                        return if (holder is ViewHolderDelegate) {
-                            holder.getImageView()
-                        } else {
-                            null
-                        }
-                    }
-                })
+//                .setRecyclerViewTransitionDelegate(object : MuseumDialogFragment.RecyclerViewTransitionDelegate {
+//                    override fun getImageView(holder: RecyclerView.ViewHolder): View? {
+//                        return if (holder is ViewHolderDelegate) {
+//                            holder.getImageView()
+//                        } else {
+//                            null
+//                        }
+//                    }
+//                })
                 .showSafely(supportFragmentManager)
         }
 
@@ -144,7 +149,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupCinema() {
-        imageLoader?.loadSmallImage(this, requireNotNull(videoView), Uri.parse(VIDEO_THUMBNAIL_URL))
+        videoView?.load(VIDEO_THUMBNAIL_URL) {
+            setCrossfade(PaintingLoader.Request.Crossfade.DefaultEnabled())
+            setSize(300, 300)
+        }
 
         videoView?.setOnClickListener {
             CinemaDialogFragment.Builder()

@@ -1,5 +1,5 @@
+rootProject.name = 'arbat'
 include ':cinema'
 include ':museum'
 include ':radio'
 include ':sample'
-rootProject.name = 'Arbat'

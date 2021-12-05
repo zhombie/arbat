@@ -2,9 +2,9 @@ package kz.zhombie.radio
 
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.DefaultLifecycleObserver
 
-interface Radio : RemoteControl, TrackInformation, LifecycleObserver {
+interface Radio : RemoteControl, TrackInformation, DefaultLifecycleObserver {
     companion object {
         fun init(isLoggingEnabled: Boolean) {
             Settings.setLoggingEnabled(isLoggingEnabled)
