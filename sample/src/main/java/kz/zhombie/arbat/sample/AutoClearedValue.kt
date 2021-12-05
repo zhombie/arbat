@@ -18,7 +18,7 @@ fun <T : Any> LifecycleOwner.bindAutoClearedValue() = AutoClearedValue<T>(this)
  */
 class AutoClearedValue<T : Any> constructor(
     private val owner: LifecycleOwner
-) : ReadWriteProperty<LifecycleOwner, T?>, LifecycleObserver {
+) : ReadWriteProperty<LifecycleOwner, T?>, DefaultLifecycleObserver {
 
     companion object {
         private val TAG = AutoClearedValue::class.java.simpleName
@@ -57,8 +57,9 @@ class AutoClearedValue<T : Any> constructor(
         }
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
+    override fun onDestroy(owner: LifecycleOwner) {
+        super.onDestroy(owner)
+
         Logger.debug(TAG, "[$owner] onDestroy() -> value: $value")
 
         /**
