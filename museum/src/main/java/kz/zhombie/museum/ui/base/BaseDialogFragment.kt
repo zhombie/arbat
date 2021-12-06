@@ -26,17 +26,17 @@ open class BaseDialogFragment constructor(
         return dialog
     }
 
-    /**
-     * Checks if system UI (status bar and navigation bar) is shown or we are in fullscreen mode.
-     */
-    protected fun isSystemUiShown(): Boolean {
-        return true
-    }
-
-    /**
-     * Shows or hides system UI (status bar and navigation bar).
-     */
-    protected fun showSystemUi(show: Boolean) {
-    }
+//    /**
+//     * Checks if system UI (status bar and navigation bar) is shown or we are in fullscreen mode.
+//     */
+//    protected fun isSystemUiShown(): Boolean {
+//        return true
+//    }
+//
+//    /**
+//     * Shows or hides system UI (status bar and navigation bar).
+//     */
+//    protected fun showSystemUi(show: Boolean) {
+//    }
 
 }
