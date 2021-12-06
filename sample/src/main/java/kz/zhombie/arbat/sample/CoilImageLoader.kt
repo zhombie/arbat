@@ -75,7 +75,7 @@ class CoilImageLoader constructor(
                 centerRadius = 60F
                 strokeCap = Paint.Cap.ROUND
                 strokeWidth = 11F
-                setColorSchemeColors(ContextCompat.getColor(context, R.color.purple_500))
+                setColorSchemeColors(ContextCompat.getColor(context, R.color.white))
             }
         }
         return circularProgressDrawable
