@@ -39,7 +39,6 @@ class CinemaDialogFragment private constructor(
 
     class Builder {
         private var tag: String? = null
-
         private var movie: Movie? = null
         private var screenView: View? = null
         private var isFooterViewEnabled: Boolean = false
@@ -140,6 +139,9 @@ class CinemaDialogFragment private constructor(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val configuration = Cinema.getConfiguration(requireContext())
+        Logger.debug(TAG, "configuration: $configuration")
+
         params = BundleManager.parse(arguments)
     }
 
@@ -207,7 +209,6 @@ class CinemaDialogFragment private constructor(
     }
 
     override fun dismiss() {
-        Logger.debug(TAG, "dismiss()")
         Logger.debug(TAG, "dismiss() -> ${viewsTransitionAnimator?.isLeaving}")
 
         if (viewsTransitionAnimator?.isLeaving == false) {

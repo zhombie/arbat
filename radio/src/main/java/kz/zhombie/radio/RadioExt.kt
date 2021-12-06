@@ -2,8 +2,8 @@ package kz.zhombie.radio
 
 import java.util.concurrent.TimeUnit
 
-fun Radio.formatToDigitalClock(milliseconds: Long?): String {
-    if (isReleased()) return "00:00"
+fun Radio?.formatToDigitalClock(milliseconds: Long?): String {
+    if (this == null || isReleased()) return "00:00"
     if (milliseconds == null) return "00:00"
     return try {
         val hours = TimeUnit.MILLISECONDS.toHours(milliseconds) % 24
@@ -21,10 +21,6 @@ fun Radio.formatToDigitalClock(milliseconds: Long?): String {
     }
 }
 
-fun Radio.getDisplayDuration(): String {
-    return formatToDigitalClock(duration)
-}
+fun Radio.getDisplayDuration(): String = formatToDigitalClock(duration)
 
-fun Radio.getDisplayCurrentPosition(): String {
-    return formatToDigitalClock(currentPosition)
-}
+fun Radio.getDisplayCurrentPosition(): String = formatToDigitalClock(currentPosition)

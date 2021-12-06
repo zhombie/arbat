@@ -25,6 +25,8 @@ internal class RadioStation private constructor(
         private val TAG = RadioStation::class.java.simpleName
 
         fun create(context: Context, listener: Radio.Listener? = null): Radio {
+            val configuration = INSTANCE.getConfiguration(context)
+            Logger.debug(TAG, "configuration: $configuration")
             return RadioStation(context, listener)
         }
     }

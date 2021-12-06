@@ -7,16 +7,21 @@ import kz.zhombie.museum.logging.Logger
 object Museum {
     internal const val TAG = "Museum"
 
-    private var isLoggingEnabled: Boolean = false
+    data class Configuration constructor(
+        val isLoggingEnabled: Boolean
+    )
 
-    private var configuration: MuseumDialogFragment.Factory.Configuration? = null
-    private var configurationFactory: MuseumDialogFragment.Factory? = null
+    interface Factory {
+        fun getMuseumConfiguration(): Configuration
+    }
+
+    private var configuration: Configuration? = null
+    private var configurationFactory: Factory? = null
 
     private var paintingLoader: PaintingLoader? = null
     private var paintingLoaderFactory: PaintingLoader.Factory? = null
 
-    @Synchronized
-    fun isLoggingEnabled(): Boolean = configuration?.isLoggingEnabled ?: isLoggingEnabled
+    fun isLoggingEnabled(): Boolean = configuration?.isLoggingEnabled ?: false
 
     @Synchronized
     fun getPaintingLoader(context: Context?): PaintingLoader =
@@ -47,36 +52,32 @@ object Museum {
     }
 
     @Synchronized
-    fun getConfiguration(context: Context?): MuseumDialogFragment.Factory.Configuration =
+    fun getConfiguration(context: Context?): Configuration =
         configuration ?: setConfigurationFactory(context)
 
     @Synchronized
-    fun setConfiguration(configuration: MuseumDialogFragment.Factory.Configuration?) {
+    fun setConfiguration(configuration: Configuration?) {
         configurationFactory = null
         this.configuration = configuration
-        isLoggingEnabled = configuration?.isLoggingEnabled ?: false
     }
 
     @Synchronized
-    fun setConfiguration(factory: MuseumDialogFragment.Factory) {
+    fun setConfiguration(factory: Factory) {
         configuration = null
-        isLoggingEnabled = false
         configurationFactory = factory
     }
 
     @Synchronized
-    fun setConfigurationFactory(context: Context?): MuseumDialogFragment.Factory.Configuration {
+    fun setConfigurationFactory(context: Context?): Configuration {
         configuration?.let { return it }
 
         configuration = configurationFactory?.getMuseumConfiguration()
-            ?: (context?.applicationContext as? MuseumDialogFragment.Factory)?.getMuseumConfiguration()
-            ?: MuseumDialogFragment.Factory.Configuration(false)
+            ?: (context?.applicationContext as? Factory)?.getMuseumConfiguration()
+            ?: Configuration(false)
 
         Logger.debug(TAG, "setConfigurationFactory() -> $configuration")
 
         configurationFactory = null
-
-        isLoggingEnabled = configuration?.isLoggingEnabled ?: false
 
         return requireNotNull(configuration)
     }
@@ -90,8 +91,6 @@ object Museum {
 
         paintingLoader = null
         paintingLoaderFactory = null
-
-        isLoggingEnabled = false
     }
 
 }

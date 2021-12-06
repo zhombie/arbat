@@ -1,19 +1,18 @@
 package kz.zhombie.radio.logging
 
 import android.util.Log
-import kz.zhombie.radio.Settings
+import kz.zhombie.radio.Radio
+import kz.zhombie.radio.INSTANCE
 
 internal object Logger {
-    private const val TAG = "Radio"
-
-    fun debug(tag: String = TAG, message: String) {
-        if (Settings.isLoggingEnabled()) {
+    fun debug(tag: String = Radio.TAG, message: String) {
+        if (INSTANCE.isLoggingEnabled()) {
             Log.d(tag, message)
         }
     }
 
-    fun error(tag: String = TAG, message: String) {
-        if (Settings.isLoggingEnabled()) {
+    fun error(tag: String = Radio.TAG, message: String) {
+        if (INSTANCE.isLoggingEnabled()) {
             Log.e(tag, message)
         }
     }

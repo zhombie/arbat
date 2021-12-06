@@ -1,6 +1,7 @@
 package kz.zhombie.radio
 
-fun Radio.getPositionByProgress(progress: Int): Long {
+fun Radio?.getPositionByProgress(progress: Int): Long {
+    if (this == null) return 0L
     return (progress * duration) / 100L
 }
 

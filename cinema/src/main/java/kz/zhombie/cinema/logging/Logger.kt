@@ -1,19 +1,17 @@
 package kz.zhombie.cinema.logging
 
 import android.util.Log
-import kz.zhombie.cinema.Settings
+import kz.zhombie.cinema.Cinema
 
 internal object Logger {
-    private const val TAG = "Cinema"
-
-    fun debug(tag: String = TAG, message: String) {
-        if (Settings.isLoggingEnabled()) {
+    fun debug(tag: String = Cinema.TAG, message: String) {
+        if (Cinema.isLoggingEnabled()) {
             Log.d(tag, message)
         }
     }
 
-    fun error(tag: String = TAG, message: String) {
-        if (Settings.isLoggingEnabled()) {
+    fun error(tag: String = Cinema.TAG, message: String) {
+        if (Cinema.isLoggingEnabled()) {
             Log.e(tag, message)
         }
     }

@@ -36,27 +36,13 @@ class MuseumDialogFragment private constructor(
         }
     }
 
-    interface Factory {
-        data class Configuration constructor(
-            val isLoggingEnabled: Boolean
-        )
-
-        fun getMuseumConfiguration(): Configuration
-    }
-
     class Builder {
         private var tag: String? = null
-
         private var paintingLoader: PaintingLoader? = null
-
         private var paintings: List<Painting>? = null
-
         private var imageView: ImageView? = null
-
         private var startPosition: Int? = null
-
         private var isFooterViewEnabled: Boolean? = null
-
         private var callback: Callback? = null
 
         fun setTag(tag: String?): Builder {

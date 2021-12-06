@@ -6,9 +6,15 @@ import androidx.lifecycle.DefaultLifecycleObserver
 
 interface Radio : RemoteControl, TrackInformation, DefaultLifecycleObserver {
     companion object {
-        fun init(isLoggingEnabled: Boolean) {
-            Settings.setLoggingEnabled(isLoggingEnabled)
-        }
+        internal const val TAG = "Radio"
+    }
+
+    data class Configuration constructor(
+        val isLoggingEnabled: Boolean
+    )
+
+    interface Factory {
+        fun getRadioConfiguration(): Configuration
     }
 
     class Builder constructor(private val context: Context) {

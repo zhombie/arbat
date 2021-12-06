@@ -127,7 +127,7 @@ class CoilImageLoader constructor(
                         scale(Scale.FIT)
                 }
 
-                when (size) {
+                when (val size = size) {
                     PaintingLoader.Request.Size.Inherit -> {
                         precision(Precision.AUTOMATIC)
                         size(ViewSizeResolver(imageView))
@@ -137,12 +137,8 @@ class CoilImageLoader constructor(
                         size(OriginalSize)
                     }
                     is PaintingLoader.Request.Size.Pixel -> {
-                        with(size) {
-                            if (this is PaintingLoader.Request.Size.Pixel) {
-                                precision(Precision.EXACT)
-                                size(width, height)
-                            }
-                        }
+                        precision(Precision.EXACT)
+                        size(size.width, size.height)
                     }
                 }
             }

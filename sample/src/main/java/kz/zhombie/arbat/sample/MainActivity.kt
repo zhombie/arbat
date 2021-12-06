@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
+import kz.zhombie.cinema.Cinema
 import kz.zhombie.cinema.CinemaDialogFragment
 import kz.zhombie.cinema.model.Movie
 import kz.zhombie.museum.*
@@ -50,12 +51,6 @@ class MainActivity : AppCompatActivity() {
     private var pauseButton: MaterialButton? = null
     private var playOrPauseButton: MaterialButton? = null
 
-//    private var imageLoader by bindAutoClearedValue<CoilImageLoader>()
-
-//    override fun getPaintingLoader(): PaintingLoader {
-//        return requireNotNull(imageLoader)
-//    }
-
     private var radio: Radio? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,12 +79,14 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
-        radio?.release()
-        radio?.let { lifecycle.removeObserver(it) }
-        radio = null
+        Cinema.clear()
 
         paintingLoader.clearCache()
         Museum.clear()
+
+        radio?.release()
+        radio?.let { lifecycle.removeObserver(it) }
+        radio = null
     }
 
     private fun setupMuseum() {
@@ -164,8 +161,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupRadio() {
-        Radio.init(true)
-
         fun ensureExistence(block: () -> Unit) {
             if (radio == null) {
                 Toast.makeText(this, "Create at first! Click on \"Create\" button", Toast.LENGTH_SHORT).show()
