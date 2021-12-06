@@ -79,11 +79,14 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
 
+        // Cinema
         Cinema.clear()
 
+        // Museum
         paintingLoader.clearCache()
         Museum.clear()
 
+        // Radio
         radio?.release()
         radio?.let { lifecycle.removeObserver(it) }
         radio = null
