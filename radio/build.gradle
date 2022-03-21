@@ -7,7 +7,8 @@ android {
 }
 
 ext {
-    exoplayer_version = '2.16.1'
+    exoplayer_version = '2.17.1'
+    lifecycle_version = '2.4.1'
 }
 
 dependencies {
@@ -18,8 +19,8 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.4.1'
 
     // Lifecycle
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
-    implementation 'androidx.lifecycle:lifecycle-common-java8:2.4.0'
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
 
     // ExoPlayer
     implementation "com.google.android.exoplayer:exoplayer-core:$exoplayer_version"
